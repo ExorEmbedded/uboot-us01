@@ -1,0 +1,195 @@
+Summary
+=======
+This file contains some notes about the actual Uboot support for Omap3 UN30 platform, running WCE6.
+
+Toolchain & Building image
+==========================
+Toolchain used is the free "arm-none-gnueabi"
+
+The sequence needed to build image is:
+export PATH=/opt/toolchain/arm-2008q1/bin:$PATH
+export CROSS_COMPILE=arm-none-linux-gnueabi-
+make omap3_un30_config
+make ARCH=arm
+
+Boot procedure
+==============
+The Omap3 CPU is configured (HW) to boot from NORFLASH (XIP boot from GPMC_cs0).
+
+A separate loader (stored af NORFLASH base) is actually used to perform the following tasks:
+- CPU init (clocks, GPMC, DDRAM ...)
+- Copy u-boot image from Flash to DDRAM
+- Jump to u-boot in DDRAM.
+
+This means the u-boot is directly started into DDRAM.
+The actual loader is a modified version of the WCE6 Xloader, originally used for NAND boot.
+
+NORFLASH memory map
+===================
+Sector0			offset 0x00000		Xloader
+Sector1-2		offset 0x20000		U-boot image
+Sector3			offset 0x60000		U-boot environment
+Sector4			offset 0x80000		RFU (will be used for X-FIS support)
+Sector5...10	offset 0xa0000		Splash image
+Sector11...44	offset 0x160000		WCE6 image (actually native WCE6 .bin image is handled; about 40MB size isassumed)
+Sector45... 	offset 0x2d00000	Filesystem (handled by WCE6)
+
+NOTE: Actually the memory map is static/fixed. TODO: Add support for X-fis table and safe WCE6 image.
+
+Installation on target
+======================
+Using UltilogicConfigurator, Xloader and U-boot image are copied in NORFLASH (AMBA base address 0x80000000), at the offsets indicated in "NORFLASH memory map".
+
+Actual u-boot main features
+===========================
+- WCE6 support for native nk.bin format 
+- NORFLASH support
+- ETH support 
+- tftp, dhcp support for WCE6 .nb0 loading 
+- USB support
+- UltiI2C driver support
+- Omap videocontroller support
+- Splash screen support
+- Parsing support of DisplayConfig.xml and automatic LCD configuration based on detected displayid
+- HW factory parameters into I2C SEEPROM
+
+U-boot memory commands
+======================
+Standard U-boot memory commands are available both for DDRAM and for FLASH.
+
+DDRAM 	is 256MB wide, starting from address 0x80000000
+FLASH	is 128MB wide, starting from address 0x1A000000 and is seen by u-boot as it was linearly mapped (not paged)
+
+Copy commands from DDRAM to NORFLASH are redirected to NORFLASH write sequences (but sectors must be erased first/separately).
+
+WCE6 image is assumed to be located at address 0x80001000.
+U-boot runs into the uppermost 2MB of the 256MB DDRAM.
+
+Use notes
+=========
+The default environment is configured in order to automatically start WCE6 at power up. It is possible to
+break this sequence and entering the u-boot command prompt by immediately pressing <ctrl-c>.
+
+The default environment contains the following scripts (use the "run" command to launch them):
+  - wce_store2flash		Stores a binary WCE6 image into FLASH (image has be preloaded into DDRAM)
+  - wce_tftp			Loads into DDRAM a WCE6 binary image (nk.bin) via TFTP
+  - wce_dhcp			Loads into DDRAM a WCE6 binary image (nk.bin) via TFTP but makes DHCP handshaking before to get a free IP address
+  - wce_ramboot			Executes the binary WCE6 image (image has be preloaded into DDRAM)
+  - wce_flashboot		Executes the WCE6 image into NORFLASH
+  - wce_usb				Loads WCE6 image (nk.bin) from USB memory stick
+
+For further details, please use the "help" and "printenv" commands.
+
+To be done
+==========
+This is a preliminar version so the following main features are still to be done:
+  -WCE6 safe and main image support
+  -X-FIS support
+
+=================================================================================
+Peculiar Features description
+=================================================================================
+
+LCD display support and splashscreen
+----------------------------------------
+The following defines are required into the project header file:
+#define CONFIG_VIDEO_OMAP3 1
+#define CONFIG_VIDEO_MEM_ADDR 0x87000000
+#define CONFIG_SPLASH_ADDR          (CONFIG_ENV_ADDR + SZ_256K)
+
+
+Display parameters are set by the following environment vars:
+	lcd_hsy=40 40 48 1	//Hsync FP BP W INV
+	lcd_vsy=26 16 10 1	//Vsync FP BP W INV
+	lcd_blank=0			//Blank INV
+	lcd_size=800 480 16	//Xres Yres Bpp
+	lcd_pclk=25 0		//Pclk FMhz INV
+
+Splash file format is the typical packaged .bin format , still in use on UN20 (video parameters info not used)
+Splash image is automatically centered on the screen
+
+In un30.h file the following code is introduced:
+
+#ifdef CONFIG_VIDEO_OMAP3
+#define BACKGROUND_COLOR    0x00000000
+
+struct panel_config display_cfg = {
+       .xres		= 800,
+       .yres		= 480,
+       .bpp 		= 16,
+       .hsy_fp		= 40,
+       .hsy_bp		= 40,
+       .hsy_width 	= 48,
+       .hsy_inv		= 1,
+       .vsy_fp		= 26,
+       .vsy_bp		= 16,
+       .vsy_width 	= 10,
+       .vsy_inv		= 1,
+	   .blank_inv	= 0,
+	   .pclk_freq	= 24,
+	   .pclk_inv	= 0
+};
+
+#endif
+
+In un30.c file, misc_init() function, the following sequence is required:
+
+#ifdef CONFIG_VIDEO_OMAP3
+	omap3_dss_panel_getenv(&display_cfg);
+    omap3_dss_panel_config(&display_cfg);
+    omap3_dss_set_background_col(BACKGROUND_COLOR);
+	omap3_dss_panel_splash(&display_cfg);
+    omap3_dss_enable();
+	lcd_pwron();
+#endif
+
+
+UltiI2C FPGA I2C support
+----------------------------------------
+I2C support is extended to UltiI2C FPGA core.
+
+The following additional defines are required into the project header file:
+#define CONFIG_DRIVER_ULTII2C		1
+#define CONFIG_SYS_ULTII2CBASE		0x1ac02000		
+
+
+LCD DisplayConfig.xml configuration support 
+-------------------------------------------
+The support is enabled by adding the following define into the project header file:
+#define CONFIG_CMD_DISPLAYCONFIGXML
+
+This allows to set the LCD display parameters (lcd_xxx env vars) according with the DisplayID get from the I2C SEEPROM HW params.
+The DisplayID is compared with an internal LCD database, stored into the environment itself.
+The LCD database is generated by parsing the Displayconfig.xml file (loaded into memory by fatload command or something like that) by sending the command:
+-> lcdxmlparse <address>
+At this point by saving the env (saveenv) the database will be permanently saved (no need of displayconfig-xml anymore).
+
+HW factory parameters on I2C support
+------------------------------------
+The support is enabled by adding the following defines into the project header file:
+#define CONFIG_CMD_I2CHWCFG	
+#define CONFIG_SYS_I2C_HWCFGADD		0x54
+
+This gives the possibility to handle HW factory params on I2C SEEPROM.
+The above HW parameters are mapped into the following environment vars:
+- ethaddr 		aa bb cc dd ee ff
+- hw_dispid		<displayid>
+- hw_date		dd mm yy
+- hw_sernum		<24bitserialnum>
+
+It is possible to write to I2C SEEPROM the actual values of the above environment vars by using the command:
+-> i2csavehw
+
+At powerup, if valid I2C SEEPROM checksum found, the above environment vars are updated with the I2C SEEPROM contents and used accordingly (for eth MAC address and 
+for configuring the LCD display interface).
+
+In un30.c file, misc_init() function, at the beginning, the following sequence is required:
+
+#ifdef CONFIG_CMD_I2CHWCFG
+	i2cgethwcfg ();
+#endif
+
+  
+
+
+
