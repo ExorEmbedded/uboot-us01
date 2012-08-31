@@ -39,6 +39,24 @@
 #define CPGMACSS_SW_RST		(1 << 1)
 
 /*
+ * This routine starts the PWM backlight dimming gptimer in such a way a 100% duty cycle is achieved; this to make things independent from pwm frequency
+ * required by the specific backlight controller. Hardcoded values are used, no need to configure anything, since a 100% duty is used.
+ */
+static void StartPWMBacklight(void)
+{
+  static struct gptimer *timer_base = (struct gptimer *)OMAP34XX_GPT9;
+  
+  writel(0xfffff800, &timer_base->tldr);
+  writel(0xfffffff8, &timer_base->tmar);
+  writel(0x00000215, &timer_base->tiocp_cfg);
+  writel(0x00000000, &timer_base->tisr);
+  writel(0x00000000, &timer_base->tier);
+  writel(0x00000000, &timer_base->twer);
+  writel(0x00001843, &timer_base->tclr);
+  writel(0xfffff800, &timer_base->tcrr);
+}
+
+/*
  * This routine configures the AM35xx MPU clock frequency at the optimal/nominal value of 600Mhz
  * Such a function is required for Linux OS, since Linux is not actually capable of reconfiguring the AM35xx MPU
  * clock frequency (while Wince6 is).
@@ -185,8 +203,9 @@ int misc_init_r(void)
 	omap_set_gpio_direction(7,0);
 	omap_set_gpio_dataout(7,1);
 	omap_request_gpio(55);
-	omap_set_gpio_direction(55,0);
-	omap_set_gpio_dataout(55,1);
+	//!!!omap_set_gpio_direction(55,0);
+	//!!!omap_set_gpio_dataout(55,1);
+	StartPWMBacklight();
 #endif
 	
 	configure_optimal_mpu_clock();

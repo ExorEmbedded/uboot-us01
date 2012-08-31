@@ -186,7 +186,7 @@ void enable_voltagesun31();
  MUX_VAL(CP(GPMC_NCS1),		(IDIS | PTU | EN  | M0)) /*GPMC_nCS1*/\
  MUX_VAL(CP(GPMC_NCS2),		(IDIS | PTU | EN  | M0)) /*GPMC_nCS2*/\
  MUX_VAL(CP(GPMC_NCS3),		(IEN  | PTU | EN  | M4)) /*GPIO_54*/\
- MUX_VAL(CP(GPMC_NCS4),		(IDIS | PTU | EN  | M4)) /*GPIO*/\
+ MUX_VAL(CP(GPMC_NCS4),		(IDIS | PTU | EN  | M3)) /*GPIO*/\
  MUX_VAL(CP(GPMC_NCS5),		(IDIS | PTU | EN  | M4)) /*GPIO*/\
  MUX_VAL(CP(GPMC_NCS6),		(IEN  | PTU | EN  | M4)) /*GPIO*/\
  MUX_VAL(CP(GPMC_NCS7),		(IEN  | PTU | EN  | M4)) /*GPIO*/\
