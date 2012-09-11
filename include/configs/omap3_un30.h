@@ -78,7 +78,7 @@
  * Hardware drivers
  */
 #define CONFIG_VIDEO_OMAP3 1
-#define CONFIG_VIDEO_MEM_ADDR 0x87000000
+#define CONFIG_VIDEO_MEM_ADDR 0x84800000
 
 /*
  * NS16550 Configuration

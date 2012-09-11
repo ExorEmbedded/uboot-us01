@@ -34,6 +34,24 @@
 #include "un30.h"
 #include <asm/arch/mem.h>
 
+/*
+* This routine starts the PWM backlight dimming gptimer in such a way a 100% duty cycle is achieved; this to make things independent from pwm frequency
+* required by the specific backlight controller. Hardcoded values are used, no need to configure anything, since a 100% duty is used.
+*/
+static void StartPWMBacklight(void)
+{
+  static struct gptimer *timer_base = (struct gptimer *)OMAP34XX_GPT10;
+  
+  writel(0xfffff800, &timer_base->tldr);
+  writel(0xfffffff8, &timer_base->tmar);
+  writel(0x00000215, &timer_base->tiocp_cfg);
+  writel(0x00000000, &timer_base->tisr);
+  writel(0x00000000, &timer_base->tier);
+  writel(0x00000000, &timer_base->twer);
+  writel(0x00001843, &timer_base->tclr);
+  writel(0xfffff800, &timer_base->tcrr);
+}
+
 /******************************************************************************
  * Routine: Enable_RS232PHY
  * Description: Enables the programmable serial PHY in RS232 mode, TX enabled
@@ -84,10 +102,8 @@ int lcd_pwron(struct panel_config* panel_cfg)
 	writew(EVC_ENVOLTAGE_MASK|EVC_ENVIDEO_MASK,EVC_PWRCTRL_ADDRESS);
 	for(i=0;i<300;i++)udelay(1000);
 	writew(EVC_ENVOLTAGE_MASK|EVC_ENVIDEO_MASK|EVC_ENBLIGHT_MASK,EVC_PWRCTRL_ADDRESS);
-
-	omap_request_gpio(56);
-	omap_set_gpio_direction(56,0);
-	omap_set_gpio_dataout(56,1);
+	
+	StartPWMBacklight();
 }
 
 /******************************************************************************

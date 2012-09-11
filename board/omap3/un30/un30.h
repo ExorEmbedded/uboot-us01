@@ -169,7 +169,7 @@ void setup_ambabridge(void);
  MUX_VAL(CP(GPMC_NCS2),		(IDIS | PTU | EN  | M0)) /*GPMC_nCS2*/\
  MUX_VAL(CP(GPMC_NCS3),		(IDIS | PTU | EN  | M0)) /*GPMC_nCS3*/\
  MUX_VAL(CP(GPMC_NCS4),		(IDIS | PTU | EN  | M0)) /*GPMC_nCS4*/\
- MUX_VAL(CP(GPMC_NCS5),		(IDIS | PTU | EN  | M4)) /*GPMC_nCS5*/\
+ MUX_VAL(CP(GPMC_NCS5),		(IDIS | PTU | EN  | M3)) /*GPMC_nCS5*/\
  MUX_VAL(CP(GPMC_NCS6),		(IDIS | PTU | EN  | M0)) /*GPMC_nCS6*/\
  MUX_VAL(CP(GPMC_NCS7),		(IDIS | PTU | EN  | M0)) /*GPMC_nCS7*/\
  MUX_VAL(CP(GPMC_CLK),		(IEN  | PTU | EN  | M0)) /*GPMC_CLK*/\
