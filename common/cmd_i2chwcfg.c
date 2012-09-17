@@ -61,13 +61,14 @@
 
 /* --------------------- Format 3 specific ------------------------------ */
 #define FACTORY_SECTION_SIZE_V3	64	/* First part of I2C = factory section for V3*/
-#define BL_TIME_CNT			130
-#define BL_TIME_CHK			134
+#define BL_TIME_CNT		130
+#define BL_TIME_CHK		134
 #define SYS_TIME_CNT		136
 #define SYS_TIME_CHK		140
 #define HWPICKPANELCODE_POS     4
 
-#define ZEROCKSUM			0x57
+#define ZEROCKSUM		0x57
+#define SAFE_FACTORY_AREA_POS	184
 
 
 /*=======================================================================
@@ -82,6 +83,99 @@
   extern int getdisplay(unsigned int lcdid);
 #endif
 
+/* ======================================================================
+ * Helper function indicating if the buffer contents define a valid 
+ * factory section, format >= 3. Returns 1 if valid, 0 otherwise.
+ * ====================================================================== */
+int isvalidfactory3(unsigned char* buf)
+{
+  unsigned char cksum;
+  int i;
+  
+  /* Version check; failure if version < 3 */
+  if(buf[VERSION_POS] < 3)     
+    return 0;
+    
+  /* Checksum check */  
+  cksum = 1;
+  for(i = CKSUM_POS + 1; i < FACTORY_SECTION_SIZE_V3; i ++)
+    cksum += buf[i];
+  cksum -= 0xaa;
+  
+  if(buf[CKSUM_POS] != cksum)
+    return 0;
+  
+  /* Signature check */
+  if( (buf[SIGNATURE1_POS] != SIGNATURE1_VAL) || (buf[SIGNATURE2_POS] != SIGNATURE2_VAL) )
+    return 0;
+  
+  /* It is a valid factory version 3 */
+  return 1;
+}
+
+
+/* ======================================================================
+ * Helper function returning the factory section area of the selected i2c
+ * seeprom device.
+ * In case of seeprom format >=3, the proper alignment/handling of the
+ * safe factory section area is performed transparently.
+ * Returns 1 in case of i2c error.
+ * ====================================================================== */
+int getfactorysection(unsigned char i2cslaveaddr, unsigned char* buf)
+{
+  unsigned char safefactory_buf[FACTORY_SECTION_SIZE_V3];
+  int i;
+  
+  /* Reads the factory section from seeprom */
+  if (i2c_read(i2cslaveaddr, 0, 1, buf, FACTORY_SECTION_SIZE_V3) != 0)
+  {
+    puts ("I2C error reading the factory section\n");
+    return 1;
+  }
+  
+  /* Reads the safe factory section from seeprom */
+  if (i2c_read(i2cslaveaddr, SAFE_FACTORY_AREA_POS, 1, safefactory_buf, FACTORY_SECTION_SIZE_V3) != 0)
+  {
+    puts ("I2C error reading the factory section\n");
+    return 1;
+  }
+  
+  /* Performs synchronization/handling of the safe factory section if we detect a format >= 3 */
+  if(isvalidfactory3(buf))   //If we have a valid v3 factory section area...
+  {
+    /* ...copy factory section to safe factory section, wherever any difference is found  */
+    for(i = 0; i < FACTORY_SECTION_SIZE_V3; i ++)
+      if(buf[i] != safefactory_buf[i])
+	i2c_write (i2cslaveaddr, SAFE_FACTORY_AREA_POS + i, 1, &(buf[i]), 1);
+  }
+  else                       // else: The factory section area is not a valid version 3 one ...
+  {
+    if(isvalidfactory3(safefactory_buf)) //...if the safe factory section is a valid version 3 one
+    {                                    //...copy the safe area to the factory area (recovery)
+      for(i = 0; i < FACTORY_SECTION_SIZE_V3; i ++)
+	if(buf[i] != safefactory_buf[i])
+	{
+	  buf[i]= safefactory_buf[i];
+	  if(i2c_write (i2cslaveaddr, i, 1, &(buf[i]), 1))
+	  {
+	    puts ("I2C error writing the factory section\n");
+	    return 1;
+	  }
+	}
+    }
+    else // In this case neither the factory section nor the safe factory section areas are valid format 3... assume an old version 2 is 
+    {    // used. Just read the factory section assuming a version 2 size and leave the upper levels to validate its contents.
+      if (i2c_read(i2cslaveaddr, 0, 1, buf, FACTORY_SECTION_SIZE_V2) != 0)
+      {
+	puts ("I2C error reading the factory section:2\n");
+	return 1;
+      }
+    }
+  }
+  
+  return 0;
+}
+
 
 /* ======================================================================
  * Perform HW cfg load from I2C SEEPROM to env vars
@@ -89,13 +183,14 @@
 int i2cgethwcfg (void)
 {
   unsigned char buf[FACTORY_SECTION_SIZE_V2];
+  unsigned char adpbuf[FACTORY_SECTION_SIZE_V2];
   unsigned char cksum;
   int i, j;
   char label[40];
   
   /* Reads the I2C contents */
-  if (i2c_read(CONFIG_SYS_I2C_HWCFGADD, 0, 1, buf, FACTORY_SECTION_SIZE_V2) != 0)
-	return 1;
+  if(getfactorysection(CONFIG_SYS_I2C_HWCFGADD, buf))
+    return 1;
   
   /* Checksum check */
   if(buf[VERSION_POS] < 3) 
@@ -125,8 +220,12 @@ int i2cgethwcfg (void)
 #ifdef CONFIG_SYS_I2C_ADPADD
   /* If display ID=0xff, get it from the ADP board */
   if(buf[DISPID_POS] == 0xff)
-	  if (i2c_read(CONFIG_SYS_I2C_ADPADD, DISPID_POS, 1, &(buf[DISPID_POS]), 1) != 0)
-		return 1;
+  {
+    if(getfactorysection(CONFIG_SYS_I2C_ADPADD, adpbuf))
+      return 1;
+    
+    buf[DISPID_POS] = adpbuf[DISPID_POS];
+  }
 #endif
   sprintf(label, "%u", buf[DISPID_POS]);
   setenv("hw_dispid", label); 
