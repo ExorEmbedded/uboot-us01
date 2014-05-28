@@ -7,20 +7,7 @@
  * Copyright (C) 2008 Freescale Semiconductor, Inc.
  *		Dave Liu <daveliu@freescale.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -28,7 +15,7 @@
 #include <part.h>
 #include <sata.h>
 
-int sata_curr_device = -1;
+static int sata_curr_device = -1;
 block_dev_desc_t sata_dev_desc[CONFIG_SYS_SATA_MAX_DEVICE];
 
 int __sata_initialize(void)
@@ -44,25 +31,31 @@ int __sata_initialize(void)
 		sata_dev_desc[i].type = DEV_TYPE_HARDDISK;
 		sata_dev_desc[i].lba = 0;
 		sata_dev_desc[i].blksz = 512;
+		sata_dev_desc[i].log2blksz = LOG2(sata_dev_desc[i].blksz);
 		sata_dev_desc[i].block_read = sata_read;
 		sata_dev_desc[i].block_write = sata_write;
 
 		rc = init_sata(i);
-		rc = scan_sata(i);
-		if ((sata_dev_desc[i].lba > 0) && (sata_dev_desc[i].blksz > 0))
-			init_part(&sata_dev_desc[i]);
+		if (!rc) {
+			rc = scan_sata(i);
+			if (!rc && (sata_dev_desc[i].lba > 0) &&
+				(sata_dev_desc[i].blksz > 0))
+				init_part(&sata_dev_desc[i]);
+		}
 	}
 	sata_curr_device = 0;
 	return rc;
 }
 int sata_initialize(void) __attribute__((weak,alias("__sata_initialize")));
 
+#ifdef CONFIG_PARTITIONS
 block_dev_desc_t *sata_get_dev(int dev)
 {
 	return (dev < CONFIG_SYS_SATA_MAX_DEVICE) ? &sata_dev_desc[dev] : NULL;
 }
+#endif
 
-int do_sata(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+static int do_sata(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int rc = 0;
 
@@ -77,8 +70,7 @@ int do_sata(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	switch (argc) {
 	case 0:
 	case 1:
-		cmd_usage(cmdtp);
-		return 1;
+		return CMD_RET_USAGE;
 	case 2:
 		if (strncmp(argv[1],"inf", 3) == 0) {
 			int i;
@@ -115,8 +107,7 @@ int do_sata(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			}
 			return rc;
 		}
-		cmd_usage(cmdtp);
-		return 1;
+		return CMD_RET_USAGE;
 	case 3:
 		if (strncmp(argv[1], "dev", 3) == 0) {
 			int dev = (int)simple_strtoul(argv[2], NULL, 10);
@@ -147,8 +138,7 @@ int do_sata(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			}
 			return rc;
 		}
-		cmd_usage(cmdtp);
-		return 1;
+		return CMD_RET_USAGE;
 
 	default: /* at least 4 args */
 		if (strcmp(argv[1], "read") == 0) {
@@ -184,8 +174,7 @@ int do_sata(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 				n, (n == cnt) ? "OK" : "ERROR");
 			return (n == cnt) ? 0 : 1;
 		} else {
-			cmd_usage(cmdtp);
-			rc = 1;
+			return CMD_RET_USAGE;
 		}
 
 		return rc;
@@ -195,7 +184,7 @@ int do_sata(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 U_BOOT_CMD(
 	sata, 5, 1, do_sata,
 	"SATA sub system",
-	"sata init - init SATA sub system\n"
+	"init - init SATA sub system\n"
 	"sata info - show available SATA devices\n"
 	"sata device [dev] - show or set current device\n"
 	"sata part [dev] - print partition table\n"

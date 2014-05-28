@@ -3,23 +3,7 @@
  *
  * Developed for DENX Software Engineering GmbH
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -38,14 +22,16 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define DSPIC_POST_ERROR_REG	0x800
 #define DSPIC_SYS_ERROR_REG	0x802
-#define DSPIC_VERSION_REG	0x804
+#define DSPIC_SYS_VERSION_REG	0x804
+#define DSPIC_FW_VERSION_REG	0x808
 
 #if CONFIG_POST & CONFIG_SYS_POST_BSPEC1
 
 /* Verify that dsPIC ready test done early at hw init passed ok */
 int dspic_init_post_test(int flags)
 {
-	if (in_be32((void *)CONFIG_SYS_DSPIC_TEST_ADDR) & CONFIG_SYS_DSPIC_TEST_MASK) {
+	if (in_be32((void *)CONFIG_SYS_DSPIC_TEST_ADDR) &
+	    CONFIG_SYS_DSPIC_TEST_MASK) {
 		post_log("dsPIC init test failed\n");
 		return 1;
 	}
@@ -57,46 +43,60 @@ int dspic_init_post_test(int flags)
 
 #if CONFIG_POST & CONFIG_SYS_POST_BSPEC2
 /* Read a register from the dsPIC. */
-int dspic_read(ushort reg)
+int dspic_read(ushort reg, ushort *data)
 {
-	uchar buf[2];
+	uchar buf[sizeof(*data)];
+	int rval;
 
 	if (i2c_read(CONFIG_SYS_I2C_DSPIC_IO_ADDR, reg, 2, buf, 2))
 		return -1;
+	rval = i2c_read(CONFIG_SYS_I2C_DSPIC_IO_ADDR, reg, sizeof(reg),
+			buf, sizeof(*data));
+	*data = (buf[0] << 8) | buf[1];
 
-	return (uint)((buf[0] << 8) | buf[1]);
+	return rval;
 }
 
 /* Verify error codes regs, display version */
 int dspic_post_test(int flags)
 {
-	int data;
+	ushort data;
 	int ret = 0;
 
 	post_log("\n");
-	data = dspic_read(DSPIC_VERSION_REG);
-	if (data == -1) {
-		post_log("dsPIC : failed read version\n");
+
+	/* read dspic FW-Version */
+	if (dspic_read(DSPIC_FW_VERSION_REG, &data)) {
+		post_log("dsPIC: failed read FW-Version\n");
 		ret = 1;
 	} else {
-		post_log("dsPIC version: %u.%u\n",
-			(data >> 8) & 0xFF, data & 0xFF);
+		post_log("dsPIC FW-Version:  %u.%u\n",
+			 (data >> 8) & 0xFF, data & 0xFF);
 	}
 
-	data = dspic_read(DSPIC_POST_ERROR_REG);
-	if (data != 0) ret = 1;
-	if (data == -1) {
-		post_log("dsPIC : failed read POST code\n");
-	} else {
-		post_log("dsPIC POST code 0x%04X\n", data);
-	}
-
-	data = dspic_read(DSPIC_SYS_ERROR_REG);
-	if (data == -1) {
-		post_log("dsPIC : failed read system error\n");
+	/* read dspic SYS-Version */
+	if (dspic_read(DSPIC_SYS_VERSION_REG, &data)) {
+		post_log("dsPIC: failed read version\n");
 		ret = 1;
 	} else {
-		post_log("dsPIC SYS-ERROR code: 0x%04X\n", data);
+		post_log("dsPIC SYS-Version: %u.%u\n",
+			 (data >> 8) & 0xFF, data & 0xFF);
+	}
+
+	/* read dspic POST error code */
+	if (dspic_read(DSPIC_POST_ERROR_REG, &data)) {
+		post_log("dsPIC: failed read POST code\n");
+		ret = 1;
+	} else {
+		post_log("dsPIC POST-ERROR   code:  0x%04X\n", data);
+	}
+
+	/* read dspic SYS error code */
+	if ((data = dspic_read(DSPIC_SYS_ERROR_REG, &data))) {
+		post_log("dsPIC: failed read system error\n");
+		ret = 1;
+	} else {
+		post_log("dsPIC SYS-ERROR    code:  0x%04X\n", data);
 	}
 
 	return ret;

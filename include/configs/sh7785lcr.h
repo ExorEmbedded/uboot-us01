@@ -3,31 +3,13 @@
  *
  * Copyright (C) 2008 Yoshihiro Shimoda <shimoda.yoshihiro@renesas.com>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef __SH7785LCR_H
 #define __SH7785LCR_H
 
 #undef DEBUG
-#define CONFIG_SH		1
-#define CONFIG_SH4A		1
 #define CONFIG_CPU_SH7785	1
 #define CONFIG_SH7785LCR	1
 
@@ -37,10 +19,10 @@
 #define CONFIG_CMD_NET
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_NFS
-#define CONFIG_CMD_DFL
 #define CONFIG_CMD_SDRAM
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_SAVEENV
+#define CONFIG_CMD_SH_ZIMAGEBOOT
 
 #define CONFIG_CMD_USB
 #define CONFIG_USB_STORAGE
@@ -62,13 +44,17 @@
 
 /* MEMORY */
 #if defined(CONFIG_SH_32BIT)
-#define SH7785LCR_SDRAM_PHYS_BASE	(0x48000000)
-#define SH7785LCR_SDRAM_BASE		(0x88000000)
+#define CONFIG_SYS_TEXT_BASE		0x8FF80000
+/* 0x40000000 - 0x47FFFFFF does not use */
+#define CONFIG_SH_SDRAM_OFFSET		(0x8000000)
+#define SH7785LCR_SDRAM_PHYS_BASE	(0x40000000 + CONFIG_SH_SDRAM_OFFSET)
+#define SH7785LCR_SDRAM_BASE		(0x80000000 + CONFIG_SH_SDRAM_OFFSET)
 #define SH7785LCR_SDRAM_SIZE		(384 * 1024 * 1024)
 #define SH7785LCR_FLASH_BASE_1		(0xa0000000)
 #define SH7785LCR_FLASH_BANK_SIZE	(64 * 1024 * 1024)
 #define SH7785LCR_USB_BASE		(0xa6000000)
 #else
+#define CONFIG_SYS_TEXT_BASE		0x0FF80000
 #define SH7785LCR_SDRAM_BASE		(0x08000000)
 #define SH7785LCR_SDRAM_SIZE		(128 * 1024 * 1024)
 #define SH7785LCR_FLASH_BASE_1		(0xa0000000)
@@ -77,7 +63,6 @@
 #endif
 
 #define CONFIG_SYS_LONGHELP
-#define CONFIG_SYS_PROMPT		"=> "
 #define CONFIG_SYS_CBSIZE		256
 #define CONFIG_SYS_PBSIZE		256
 #define CONFIG_SYS_MAXARGS		16
@@ -108,7 +93,6 @@
 #define CONFIG_SYS_MONITOR_BASE	(SH7785LCR_FLASH_BASE_1)
 #define CONFIG_SYS_MONITOR_LEN		(512 * 1024)
 #define CONFIG_SYS_MALLOC_LEN		(512 * 1024)
-#define CONFIG_SYS_GBL_DATA_SIZE	(256)
 #define CONFIG_SYS_BOOTMAPSZ		(8 * 1024 * 1024)
 
 /* FLASH */
@@ -171,7 +155,6 @@
 #define CONFIG_PCI_SYS_SIZE	CONFIG_SYS_SDRAM_SIZE
 
 /* Network device (RTL8169) support */
-#define CONFIG_NET_MULTI
 #define CONFIG_RTL8169
 
 /* ENV setting */
@@ -186,7 +169,8 @@
 /* Board Clock */
 /* The SCIF used external clock. system clock only used timer. */
 #define CONFIG_SYS_CLK_FREQ	50000000
+#define CONFIG_SH_TMU_CLK_FREQ CONFIG_SYS_CLK_FREQ
+#define CONFIG_SH_SCIF_CLK_FREQ CONFIG_SYS_CLK_FREQ
 #define CONFIG_SYS_TMU_CLK_DIV		4
-#define CONFIG_SYS_HZ		1000
 
 #endif	/* __SH7785LCR_H */

@@ -2,23 +2,7 @@
  * (C) Copyright 2001
  * Erik Theisen, Wave 7 Optics, etheisen@mindspring.com.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -32,13 +16,6 @@
 
 unsigned long get_dram_size (void);
 void sdram_init(void);
-
-/*
- * Macros to transform values
- * into environment strings.
- */
-#define XMK_STR(x)	#x
-#define MK_STR(x)	XMK_STR(x)
 
 /* ------------------------------------------------------------------------- */
 
@@ -64,16 +41,16 @@ int board_early_init_f (void)
 	 * IRQ 30 (EXT IRQ 5) Level One PHY; active low; level sensitive
 	 * IRQ 31 (EXT IRQ 6) SAM 1; active high; level sensitive
 	 */
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
-	mtdcr (uicer, 0x00000000);	/* disable all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0ER, 0x00000000);	/* disable all ints */
 
-	mtdcr (uiccr, 0x00000000);	/* set all to be non-critical */
-	mtdcr (uicpr, 0xFFFFFF80);	/* set int polarities */
-	mtdcr (uictr, 0x10000000);	/* set int trigger levels */
-	mtdcr (uicvcr, 0x00000001);	/* set vect base=0,
+	mtdcr (UIC0CR, 0x00000000);	/* set all to be non-critical */
+	mtdcr (UIC0PR, 0xFFFFFF80);	/* set int polarities */
+	mtdcr (UIC0TR, 0x10000000);	/* set int trigger levels */
+	mtdcr (UIC0VCR, 0x00000001);	/* set vect base=0,
 					   INT0 highest priority */
 
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
 
 #elif defined(CONFIG_W7OLMC)
 	/*
@@ -95,16 +72,16 @@ int board_early_init_f (void)
 	 * IRQ 30 (EXT IRQ 5) RCMM Reset; active low; level sensitive
 	 * IRQ 31 (EXT IRQ 6) PHY; active high; level sensitive
 	 */
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
-	mtdcr (uicer, 0x00000000);	/* disable all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0ER, 0x00000000);	/* disable all ints */
 
-	mtdcr (uiccr, 0x00000000);	/* set all to be non-critical */
-	mtdcr (uicpr, 0xFFFFFF80);	/* set int polarities */
-	mtdcr (uictr, 0x10000000);	/* set int trigger levels */
-	mtdcr (uicvcr, 0x00000001);	/* set vect base=0,
+	mtdcr (UIC0CR, 0x00000000);	/* set all to be non-critical */
+	mtdcr (UIC0PR, 0xFFFFFF80);	/* set int polarities */
+	mtdcr (UIC0TR, 0x10000000);	/* set int trigger levels */
+	mtdcr (UIC0VCR, 0x00000001);	/* set vect base=0,
 					   INT0 highest priority */
 
-	mtdcr (uicsr, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr (UIC0SR, 0xFFFFFFFF);	/* clear all ints */
 
 #else  /* Unknown */
 #    error "Unknown W7O board configuration"
@@ -157,7 +134,7 @@ phys_size_t initdram (int board_type)
 	/*
 	 * ToDo: Move the asm init routine sdram_init() to this C file,
 	 * or even better use some common ppc4xx code available
-	 * in cpu/ppc4xx
+	 * in arch/powerpc/cpu/ppc4xx
 	 */
 	sdram_init();
 
@@ -170,17 +147,17 @@ unsigned long get_dram_size (void)
 	int size = 0;
 
 	/* Get bank Size registers */
-	mtdcr (memcfga, mem_mb0cf);	/* get bank 0 config reg */
-	regs[0] = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_B0CR);	/* get bank 0 config reg */
+	regs[0] = mfdcr (SDRAM0_CFGDATA);
 
-	mtdcr (memcfga, mem_mb1cf);	/* get bank 1 config reg */
-	regs[1] = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_B1CR);	/* get bank 1 config reg */
+	regs[1] = mfdcr (SDRAM0_CFGDATA);
 
-	mtdcr (memcfga, mem_mb2cf);	/* get bank 2 config reg */
-	regs[2] = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_B2CR);	/* get bank 2 config reg */
+	regs[2] = mfdcr (SDRAM0_CFGDATA);
 
-	mtdcr (memcfga, mem_mb3cf);	/* get bank 3 config reg */
-	regs[3] = mfdcr (memcfgd);
+	mtdcr (SDRAM0_CFGADDR, SDRAM0_B3CR);	/* get bank 3 config reg */
+	regs[3] = mfdcr (SDRAM0_CFGDATA);
 
 	/* compute the size, add each bank if enabled */
 	for (i = 0; i < 4; i++) {
@@ -228,7 +205,7 @@ static void w7o_env_init (VPD * vpd)
 		/* Set 'ethaddr' envvar if 'ethaddr' envvar is the default */
 		eth = (char *)(vpd->ethAddrs[0]);
 		if (ethaddr
-		    && (strcmp (ethaddr, MK_STR (CONFIG_ETHADDR)) == 0)) {
+		    && (strcmp(ethaddr, __stringify(CONFIG_ETHADDR)) == 0)) {
 			/* Now setup ethaddr */
 			sprintf (buf, "%02x:%02x:%02x:%02x:%02x:%02x",
 				 eth[0], eth[1], eth[2], eth[3], eth[4],

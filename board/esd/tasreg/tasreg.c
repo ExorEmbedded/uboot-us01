@@ -2,23 +2,7 @@
  * (C) Copyright 2004
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -29,8 +13,6 @@
 
 
 /* Prototypes */
-int gunzip(void *, int, unsigned char *, unsigned long *);
-int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len);
 int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len);
 
@@ -220,7 +202,7 @@ int i2c_probe(uchar addr);
 
 /*
  */
-int do_iploop(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_iploop(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong addr;
 
@@ -255,7 +237,7 @@ U_BOOT_CMD(
 
 /*
  */
-int do_codec(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_codec(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	uchar buf[8];
 
@@ -308,7 +290,7 @@ U_BOOT_CMD(
 
 /*
  */
-int do_saa(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_saa(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong addr;
 	ulong instr;
@@ -341,7 +323,7 @@ U_BOOT_CMD(
 
 /*
  */
-int do_iwrite(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_iwrite(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong addr;
 	ulong data0;
@@ -380,7 +362,7 @@ U_BOOT_CMD(
 
 /*
  */
-int do_iread(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_iread(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong addr;
 	ulong cnt;
@@ -412,7 +394,7 @@ U_BOOT_CMD(
 
 /*
  */
-int do_ireadl(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_ireadl(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong addr;
 	uchar buf[32];

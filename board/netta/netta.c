@@ -2,23 +2,7 @@
  * (C) Copyright 2000-2004
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -436,13 +420,13 @@ void reset_phys(void)
 	mii_init();
 
 	for (phyno = 0; phyno < 32; ++phyno) {
-		fec8xx_miiphy_read(NULL, phyno, PHY_PHYIDR1, &v);
+		fec8xx_miiphy_read(NULL, phyno, MII_PHYSID1, &v);
 		if (v == 0xFFFF)
 			continue;
-		fec8xx_miiphy_write(NULL, phyno, PHY_BMCR, PHY_BMCR_POWD);
+		fec8xx_miiphy_write(NULL, phyno, MII_BMCR, BMCR_PDOWN);
 		udelay(10000);
-		fec8xx_miiphy_write(NULL, phyno, PHY_BMCR,
-				PHY_BMCR_RESET | PHY_BMCR_AUTON);
+		fec8xx_miiphy_write(NULL, phyno, MII_BMCR,
+				BMCR_RESET | BMCR_ANENABLE);
 		udelay(10000);
 	}
 }
@@ -562,17 +546,6 @@ int pcmcia_init(void)
 	return 0;
 }
 
-#endif
-
-#ifdef CONFIG_POST
-/*
- * Returns 1 if keys pressed to start the power-on long-running tests
- * Called from board_init_f().
- */
-int post_hotkeys_pressed(void)
-{
-	return 0;	/* No hotkeys supported */
-}
 #endif
 
 #ifdef CONFIG_HW_WATCHDOG

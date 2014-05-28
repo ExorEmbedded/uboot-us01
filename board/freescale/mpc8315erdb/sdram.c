@@ -5,23 +5,7 @@
  *          Wilson.Lo@freescale.com
  *          scottwood@freescale.com
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS for A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -54,6 +38,7 @@ static void resume_from_sleep(void)
  * This is useful for faster booting in configs where the RAM is unlikely
  * to be changed, or for things like NAND booting where space is tight.
  */
+#ifndef CONFIG_SYS_RAMBOOT
 static long fixed_sdram(void)
 {
 	volatile immap_t *im = (volatile immap_t *)CONFIG_SYS_IMMR;
@@ -68,7 +53,7 @@ static long fixed_sdram(void)
 	 * Erratum DDR3 requires a 50ms delay after clearing DDRCDR[DDR_cfg],
 	 * or the DDR2 controller may fail to initialize correctly.
 	 */
-	udelay(50000);
+	__udelay(50000);
 
 	im->ddr.csbnds[0].csbnds = (msize - 1) >> 24;
 	im->ddr.cs_config[0] = CONFIG_SYS_DDR_CS0_CONFIG;
@@ -100,6 +85,12 @@ static long fixed_sdram(void)
 
 	return msize;
 }
+#else
+static long fixed_sdram(void)
+{
+	return CONFIG_SYS_DDR_SIZE * 1024 * 1024;
+}
+#endif /* CONFIG_SYS_RAMBOOT */
 
 phys_size_t initdram(int board_type)
 {

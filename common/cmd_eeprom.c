@@ -2,31 +2,14 @@
  * (C) Copyright 2000, 2001
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- *
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
  * Support for read and write access to EEPROM like memory devices. This
  * includes regular EEPROM as well as  FRAM (ferroelectic nonvolaile RAM).
  * FRAM devices read and write data at bus speed. In particular, there is no
- * write delay. Also, there is no limit imposed on the numer of bytes that can
+ * write delay. Also, there is no limit imposed on the number of bytes that can
  * be transferred with a single read or write.
  *
  * Use the following configuration options to ensure no unneeded performance
@@ -60,7 +43,7 @@ extern int eeprom_write_enable (unsigned dev_addr, int state);
 /* ------------------------------------------------------------------------- */
 
 #if defined(CONFIG_CMD_EEPROM)
-int do_eeprom ( cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_eeprom ( cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	const char *const fmt =
 		"\nEEPROM @0x%lX %s: addr %08lx  off %04lx  count %ld ... ";
@@ -79,7 +62,7 @@ int do_eeprom ( cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		ulong cnt  = simple_strtoul (argv[4], NULL, 16);
 #endif /* CONFIG_SYS_I2C_MULTI_EEPROMS */
 
-# ifndef CONFIG_SPI
+# if !defined(CONFIG_SPI) || defined(CONFIG_ENV_EEPROM_IS_ON_I2C)
 		eeprom_init ();
 # endif /* !CONFIG_SPI */
 
@@ -104,8 +87,7 @@ int do_eeprom ( cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		}
 	}
 
-	cmd_usage(cmdtp);
-	return 1;
+	return CMD_RET_USAGE;
 }
 #endif
 
@@ -118,7 +100,7 @@ int do_eeprom ( cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
  *   0x00000nxx for EEPROM address selectors and page number at n.
  */
 
-#ifndef CONFIG_SPI
+#if !defined(CONFIG_SPI) || defined(CONFIG_ENV_EEPROM_IS_ON_I2C)
 #if !defined(CONFIG_SYS_I2C_EEPROM_ADDR_LEN) || CONFIG_SYS_I2C_EEPROM_ADDR_LEN < 1 || CONFIG_SYS_I2C_EEPROM_ADDR_LEN > 2
 #error CONFIG_SYS_I2C_EEPROM_ADDR_LEN must be 1 or 2
 #endif
@@ -176,10 +158,10 @@ int eeprom_read (unsigned dev_addr, unsigned offset, uchar *buffer, unsigned cnt
 			len = maxlen;
 #endif
 
-#ifdef CONFIG_SPI
+#if defined(CONFIG_SPI) && !defined(CONFIG_ENV_EEPROM_IS_ON_I2C)
 		spi_read (addr, alen, buffer, len);
 #else
-		if (i2c_read (addr[0], offset, alen-1, buffer, len) != 0)
+		if (i2c_read(addr[0], offset, alen - 1, buffer, len))
 			rcode = 1;
 #endif
 		buffer += len;
@@ -251,7 +233,7 @@ int eeprom_write (unsigned dev_addr, unsigned offset, uchar *buffer, unsigned cn
 
 		/*
 		 * For a FRAM device there is no limit on the number of the
-		 * bytes that can be ccessed with the single read or write
+		 * bytes that can be accessed with the single read or write
 		 * operation.
 		 */
 #if !defined(CONFIG_SYS_I2C_FRAM)
@@ -272,7 +254,7 @@ int eeprom_write (unsigned dev_addr, unsigned offset, uchar *buffer, unsigned cn
 			len = maxlen;
 #endif
 
-#ifdef CONFIG_SPI
+#if defined(CONFIG_SPI) && !defined(CONFIG_ENV_EEPROM_IS_ON_I2C)
 		spi_write (addr, alen, buffer, len);
 #else
 #if defined(CONFIG_SYS_EEPROM_X40430)
@@ -357,7 +339,7 @@ int eeprom_write (unsigned dev_addr, unsigned offset, uchar *buffer, unsigned cn
 		/* Write is enabled ... now write eeprom value.
 		 */
 #endif
-		if (i2c_write (addr[0], offset, alen-1, buffer, len) != 0)
+		if (i2c_write(addr[0], offset, alen - 1, buffer, len))
 			rcode = 1;
 
 #endif
@@ -374,7 +356,7 @@ int eeprom_write (unsigned dev_addr, unsigned offset, uchar *buffer, unsigned cn
 	return rcode;
 }
 
-#ifndef CONFIG_SPI
+#if !defined(CONFIG_SPI) || defined(CONFIG_ENV_EEPROM_IS_ON_I2C)
 int
 eeprom_probe (unsigned dev_addr, unsigned offset)
 {
@@ -403,14 +385,20 @@ eeprom_probe (unsigned dev_addr, unsigned offset)
 
 void eeprom_init  (void)
 {
-#if defined(CONFIG_SPI)
+
+#if defined(CONFIG_SPI) && !defined(CONFIG_ENV_EEPROM_IS_ON_I2C)
 	spi_init_f ();
 #endif
-#if defined(CONFIG_HARD_I2C) || \
-    defined(CONFIG_SOFT_I2C)
-	i2c_init (CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
+#if defined(CONFIG_HARD_I2C) || defined(CONFIG_SYS_I2C_SOFT) || \
+	defined(CONFIG_SYS_I2C)
+#ifdef CONFIG_SYS_I2C
+	i2c_init_all();
+#else
+	i2c_init(CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
+#endif
 #endif
 }
+
 /*-----------------------------------------------------------------------
  */
 

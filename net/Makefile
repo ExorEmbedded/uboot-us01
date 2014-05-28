@@ -2,54 +2,20 @@
 # (C) Copyright 2000-2006
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 #
-# See file CREDITS for list of people who contributed to this
-# project.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of
-# the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-# MA 02111-1307 USA
+# SPDX-License-Identifier:	GPL-2.0+
 #
 
-include $(TOPDIR)/config.mk
+#ccflags-y += -DDEBUG
 
-# CFLAGS += -DDEBUG
-
-LIB	= $(obj)libnet.a
-
-COBJS-y += bootp.o
-COBJS-$(CONFIG_CMD_DNS)  += dns.o
-COBJS-y += eth.o
-COBJS-y += net.o
-COBJS-y += nfs.o
-COBJS-y += rarp.o
-COBJS-$(CONFIG_CMD_SNTP) += sntp.o
-COBJS-y += tftp.o
-
-COBJS	:= $(COBJS-y)
-SRCS	:= $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(COBJS))
-
-all:	$(LIB)
-
-$(LIB):	$(obj).depend $(OBJS)
-	$(AR) $(ARFLAGS) $@ $(OBJS)
-
-#########################################################################
-
-# defines $(obj).depend target
-include $(SRCTREE)/rules.mk
-
-sinclude $(obj).depend
-
-#########################################################################
+obj-$(CONFIG_CMD_NET)  += arp.o
+obj-$(CONFIG_CMD_NET)  += bootp.o
+obj-$(CONFIG_CMD_CDP)  += cdp.o
+obj-$(CONFIG_CMD_DNS)  += dns.o
+obj-$(CONFIG_CMD_NET)  += eth.o
+obj-$(CONFIG_CMD_LINK_LOCAL) += link_local.o
+obj-$(CONFIG_CMD_NET)  += net.o
+obj-$(CONFIG_CMD_NFS)  += nfs.o
+obj-$(CONFIG_CMD_PING) += ping.o
+obj-$(CONFIG_CMD_RARP) += rarp.o
+obj-$(CONFIG_CMD_SNTP) += sntp.o
+obj-$(CONFIG_CMD_NET)  += tftp.o

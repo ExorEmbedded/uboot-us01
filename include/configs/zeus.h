@@ -2,23 +2,7 @@
  * (C) Copyright 2007
  * Stefan Roese, DENX Software Engineering, sr@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /************************************************************************
@@ -31,8 +15,9 @@
  * High Level Configuration Options
  *----------------------------------------------------------------------*/
 #define CONFIG_ZEUS		1		/* Board is Zeus	*/
-#define CONFIG_4xx		1		/* ... PPC4xx family	*/
 #define CONFIG_405EP		1		/* Specifc 405EP support*/
+
+#define	CONFIG_SYS_TEXT_BASE	0xFFFC0000
 
 #define CONFIG_SYS_CLK_FREQ     33000000 /* external frequency to pll   */
 
@@ -51,7 +36,6 @@
 #define CONFIG_PHY_ADDR		0x01	/* PHY address			*/
 #define CONFIG_HAS_ETH1		1
 #define CONFIG_PHY1_ADDR	0x11	/* EMAC1 PHY address		*/
-#define CONFIG_NET_MULTI	1
 #define CONFIG_SYS_RX_ETH_BUFFER	16	/* Number of ethernet rx buffers & descriptors */
 #define CONFIG_PHY_RESET	1
 #define CONFIG_PHY_RESET_DELAY	300	/* PHY RESET recovery delay	*/
@@ -77,7 +61,6 @@
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_I2C
 #define CONFIG_CMD_IRQ
-#define CONFIG_CMD_LOG
 #define CONFIG_CMD_MII
 #define CONFIG_CMD_NET
 #define CONFIG_CMD_NFS
@@ -94,7 +77,7 @@
 #define CONFIG_SYS_POST_ETHER_EXT_LOOPBACK	/* eth POST using ext loopack connector	*/
 
 /* Define here the base-addresses of the UARTs to test in POST */
-#define CONFIG_SYS_POST_UART_TABLE	{UART0_BASE}
+#define CONFIG_SYS_POST_UART_TABLE	{ CONFIG_SYS_NS16550_COM1 }
 
 #define CONFIG_LOGBUFFER
 #define CONFIG_SYS_POST_CACHE_ADDR	0x00800000 /* free virtual address	*/
@@ -122,20 +105,22 @@
 /*-----------------------------------------------------------------------
  * Serial Port
  *----------------------------------------------------------------------*/
+#define CONFIG_CONS_INDEX	1
+#define CONFIG_SYS_NS16550
+#define CONFIG_SYS_NS16550_SERIAL
+#define CONFIG_SYS_NS16550_REG_SIZE	1
+#define CONFIG_SYS_NS16550_CLK		get_serial_clock()
 #undef	CONFIG_SYS_EXT_SERIAL_CLOCK			/* external serial clock */
-#define CONFIG_SYS_BASE_BAUD		691200
+#define CONFIG_SYS_BASE_BAUD	691200
 #define CONFIG_BAUDRATE		115200
-#define CONFIG_SERIAL_MULTI
 
-/* The following table includes the supported baudrates */
-#define CONFIG_SYS_BAUDRATE_TABLE	\
-	{300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400}
+#define CONFIG_SYS_BAUDRATE_TABLE  \
+    {300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400}
 
 /*-----------------------------------------------------------------------
  * Miscellaneous configurable options
  *----------------------------------------------------------------------*/
 #define CONFIG_SYS_LONGHELP			/* undef to save memory		*/
-#define CONFIG_SYS_PROMPT	        "=> "	/* Monitor Command Prompt	*/
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_SYS_CBSIZE	        1024	/* Console I/O Buffer Size	*/
 #else
@@ -151,8 +136,6 @@
 #define CONFIG_SYS_LOAD_ADDR		0x100000  /* default load address	*/
 #define CONFIG_SYS_EXTBDINFO		1	/* To use extended board_into (bd_t) */
 
-#define CONFIG_SYS_HZ		        1000	/* decrementer freq: 1 ms ticks	*/
-
 #define CONFIG_LOADS_ECHO	1	/* echo on for serial download	*/
 #define CONFIG_SYS_LOADS_BAUD_CHANGE	1	/* allow baudrate change	*/
 
@@ -165,10 +148,11 @@
 /*-----------------------------------------------------------------------
  * I2C
  *----------------------------------------------------------------------*/
-#define CONFIG_HARD_I2C		1		/* I2C with hardware support	*/
-#undef	CONFIG_SOFT_I2C				/* I2C bit-banged		*/
-#define CONFIG_SYS_I2C_SPEED		400000		/* I2C speed and slave address	*/
-#define CONFIG_SYS_I2C_SLAVE		0x7F
+#define CONFIG_SYS_I2C
+#define CONFIG_SYS_I2C_PPC4XX
+#define CONFIG_SYS_I2C_PPC4XX_CH0
+#define CONFIG_SYS_I2C_PPC4XX_SPEED_0		400000
+#define CONFIG_SYS_I2C_PPC4XX_SLAVE_0		0x7F
 
 /* these are for the ST M24C02 2kbit serial i2c eeprom */
 #define CONFIG_SYS_I2C_EEPROM_ADDR	0x50		/* base address */
@@ -246,17 +230,17 @@
 #define CONFIG_SYS_OCM_DATA_ADDR	0xF8000000
 #define CONFIG_SYS_OCM_DATA_SIZE	0x1000
 #define CONFIG_SYS_INIT_RAM_ADDR	CONFIG_SYS_OCM_DATA_ADDR /* inside of OCM		*/
-#define CONFIG_SYS_INIT_RAM_END	CONFIG_SYS_OCM_DATA_SIZE /* End of used area in RAM	*/
+#define CONFIG_SYS_INIT_RAM_SIZE	CONFIG_SYS_OCM_DATA_SIZE /* Size of used area in RAM	*/
 
-#define CONFIG_SYS_GBL_DATA_SIZE	128  /* size in bytes reserved for initial data */
-#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_END - CONFIG_SYS_GBL_DATA_SIZE)
+#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 /* reserve some memory for POST and BOOT limit info */
 #define CONFIG_SYS_INIT_SP_OFFSET	(CONFIG_SYS_GBL_DATA_OFFSET - 16)
 
 /* extra data in OCM */
-#define CONFIG_SYS_POST_WORD_ADDR	(CONFIG_SYS_GBL_DATA_OFFSET - 4)
-#define CONFIG_SYS_POST_MAGIC		(CONFIG_SYS_OCM_DATA_ADDR + CONFIG_SYS_GBL_DATA_OFFSET - 8)
-#define CONFIG_SYS_POST_VAL		(CONFIG_SYS_OCM_DATA_ADDR + CONFIG_SYS_GBL_DATA_OFFSET - 12)
+#define CONFIG_SYS_POST_MAGIC		\
+		(CONFIG_SYS_OCM_DATA_ADDR + CONFIG_SYS_GBL_DATA_OFFSET - 8)
+#define CONFIG_SYS_POST_VAL		\
+		(CONFIG_SYS_OCM_DATA_ADDR + CONFIG_SYS_GBL_DATA_OFFSET - 12)
 
 /*-----------------------------------------------------------------------
  * External Bus Controller (EBC) Setup
@@ -278,12 +262,12 @@
  * GPIO0[28-29] - UART1 data signal input/output
  * GPIO0[30-31] - EMAC0 and EMAC1 reject packet inputs
  */
-#define CONFIG_SYS_GPIO0_OSRH		0x15555550	/* Chip selects */
-#define CONFIG_SYS_GPIO0_OSRL		0x00000110	/* UART_DTR-pin 27 alt out */
-#define CONFIG_SYS_GPIO0_ISR1H		0x10000041	/* Pin 2, 12 is input */
-#define CONFIG_SYS_GPIO0_ISR1L		0x15505440	/* OUT: LEDs 22/23; IN: pin12,2, NVALID# */
-#define CONFIG_SYS_GPIO0_TSRH		0x00000000
+#define CONFIG_SYS_GPIO0_OSRL		0x15555550	/* Chip selects */
+#define CONFIG_SYS_GPIO0_OSRH		0x00000110	/* UART_DTR-pin 27 alt out */
+#define CONFIG_SYS_GPIO0_ISR1L		0x10000041	/* Pin 2, 12 is input */
+#define CONFIG_SYS_GPIO0_ISR1H		0x15505440	/* OUT: LEDs 22/23; IN: pin12,2, NVALID# */
 #define CONFIG_SYS_GPIO0_TSRL		0x00000000
+#define CONFIG_SYS_GPIO0_TSRH		0x00000000
 #define CONFIG_SYS_GPIO0_TCR		0xBFF68317	/* 3-state OUT: 22/23/29; 12,2 is not 3-state */
 #define CONFIG_SYS_GPIO0_ODR		0x00000000
 
@@ -296,17 +280,8 @@
 #define CONFIG_SYS_TIME_POST		5000
 #define CONFIG_SYS_TIME_FACTORY_RESET	10000
 
-/*
- * Internal Definitions
- *
- * Boot Flags
- */
-#define BOOTFLAG_COLD		0x01		/* Normal Power-On: Boot from FLASH	*/
-#define BOOTFLAG_WARM		0x02		/* Software reboot			*/
-
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_KGDB_BAUDRATE	230400		/* speed to run kgdb serial port */
-#define CONFIG_KGDB_SER_INDEX	2		/* which serial port to use */
 #endif
 
 /*
@@ -342,7 +317,7 @@
 		" ramdisk_size=${ramdisk_size}\0"			\
 	"addip=setenv bootargs ${bootargs} "				\
 		"ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}"	\
-	        ":${hostname}:${netdev}:off panic=1\0"			\
+		":${hostname}:${netdev}:off panic=1\0"			\
 	"addtty=setenv bootargs ${bootargs} console=ttyS0,"		\
 		"${baudrate}\0"						\
 	"net_nfs=tftp ${kernel_mem_addr} ${file_kernel};"		\
@@ -372,7 +347,7 @@
 	"file_fs=/zeus/rootfs_ba.img\0"					\
 	"tftp_fs=tftp 100000 ${file_fs}\0"				\
 	"update_fs=protect off ff300000 ff87ffff;era ff300000 ff87ffff;"\
-	        "cp.b 100000 ff300000 580000\0"				\
+		"cp.b 100000 ff300000 580000\0"				\
 	"upd_fs=run tftp_fs;run update_fs\0"				\
 	"bootcmd=chkreset;run ramargs addip addtty addmisc;"		\
 		"bootm ${kernel_fl_addr} ${ramdisk_fl_addr}\0"		\

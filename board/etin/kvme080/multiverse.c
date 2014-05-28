@@ -8,15 +8,13 @@
  *
  * Copyright 2005 ETIN SYSTEMS Co.,Ltd.
  *
- * This program is free software; you can redistribute  it and/or modify it
- * under  the terms of  the GNU General Public License as published by the
- * Free Software Foundation;  either version 2 of the  License, or (at your
- * option) any later version.
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
 #include <asm/io.h>
 #include <pci.h>
+#include <linux/compiler.h>
 
 #include "multiverse.h"
 
@@ -103,7 +101,7 @@ int multiv_reset(unsigned long base)
 
 void multiv_auto_slot_id(unsigned long base)
 {
-	unsigned int vector;
+	__maybe_unused unsigned int vector;
 	int slot_id = 1;
 	if (readb(base + VME_CTRL) & VME_CTRL_SYSFAIL) {
 		*(volatile unsigned int*)(base + VME_IRQ2_REG) = 0xfe;

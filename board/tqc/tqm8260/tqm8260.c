@@ -2,23 +2,7 @@
  * (C) Copyright 2001
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -160,7 +144,7 @@ const iop_conf_t iop_conf_tab[4][32] = {
 	/* PD18 */ {   0,   0,   0,   1,   0,   0   }, /* PD19 */
 	/* PD17 */ {   0,   1,   0,   0,   0,   0   }, /* FCC1 ATMRXPRTY */
 	/* PD16 */ {   0,   1,   0,   1,   0,   0   }, /* FCC1 ATMTXPRTY */
-#if defined(CONFIG_SOFT_I2C)
+#if defined(CONFIG_SYS_I2C_SOFT)
 	/* PD15 */ {   1,   0,   0,   1,   1,   1   }, /* I2C SDA */
 	/* PD14 */ {   1,   0,   0,   1,   1,   1   }, /* I2C SCL */
 #else
@@ -195,17 +179,17 @@ const iop_conf_t iop_conf_tab[4][32] = {
  */
 int checkboard (void)
 {
-	char str[64];
-	int i = getenv_r ("serial#", str, sizeof (str));
+	char buf[64];
+	int i = getenv_f("serial#", buf, sizeof(buf));
 
 	puts ("Board: ");
 
-	if (!i || strncmp (str, "TQM82", 5)) {
+	if (i < 0 || strncmp(buf, "TQM82", 5)) {
 		puts ("### No HW ID - assuming TQM8260\n");
 		return (0);
 	}
 
-	puts (str);
+	puts (buf);
 	putc ('\n');
 
 	return 0;

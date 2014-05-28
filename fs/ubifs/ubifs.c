@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2006-2008 Nokia Corporation.
  *
- * (C) Copyright 2008-2009
+ * (C) Copyright 2008-2010
  * Stefan Roese, DENX Software Engineering, sr@denx.de.
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -26,10 +26,6 @@
 #include "ubifs.h"
 #include <u-boot/zlib.h>
 
-#if !defined(CONFIG_SYS_64BIT_VSPRINTF)
-#warning Please define CONFIG_SYS_64BIT_VSPRINTF for correct output!
-#endif
-
 DECLARE_GLOBAL_DATA_PTR;
 
 /* compress.c */
@@ -41,8 +37,8 @@ DECLARE_GLOBAL_DATA_PTR;
 static int gzip_decompress(const unsigned char *in, size_t in_len,
 			   unsigned char *out, size_t *out_len)
 {
-	unsigned long len = in_len;
-	return zunzip(out, *out_len, (unsigned char *)in, &len, 0, 0);
+	return zunzip(out, *out_len, (unsigned char *)in,
+		      (unsigned long *)out_len, 0, 0);
 }
 
 /* Fake description object for the "none" compressor */
@@ -124,9 +120,13 @@ int ubifs_decompress(const void *in_buf, int in_len, void *out_buf,
 static int __init compr_init(struct ubifs_compressor *compr)
 {
 	ubifs_compressors[compr->compr_type] = compr;
+
+#ifdef CONFIG_NEEDS_MANUAL_RELOC
 	ubifs_compressors[compr->compr_type]->name += gd->reloc_off;
 	ubifs_compressors[compr->compr_type]->capi_name += gd->reloc_off;
 	ubifs_compressors[compr->compr_type]->decompress += gd->reloc_off;
+#endif
+
 	return 0;
 }
 
@@ -295,6 +295,7 @@ static int ubifs_finddir(struct super_block *sb, char *dirname,
 	struct file *file;
 	struct dentry *dentry;
 	struct inode *dir;
+	int ret = 0;
 
 	file = kzalloc(sizeof(struct file), 0);
 	dentry = kzalloc(sizeof(struct dentry), 0);
@@ -336,7 +337,8 @@ static int ubifs_finddir(struct super_block *sb, char *dirname,
 		if ((strncmp(dirname, (char *)dent->name, nm.len) == 0) &&
 		    (strlen(dirname) == nm.len)) {
 			*inum = le64_to_cpu(dent->inum);
-			return 1;
+			ret = 1;
+			goto out_free;
 		}
 
 		/* Switch to the next entry */
@@ -355,11 +357,12 @@ static int ubifs_finddir(struct super_block *sb, char *dirname,
 	}
 
 out:
-	if (err != -ENOENT) {
+	if (err != -ENOENT)
 		ubifs_err("cannot find next direntry, error %d", err);
-		return err;
-	}
 
+out_free:
+	if (file->private_data)
+		kfree(file->private_data);
 	if (file)
 		free(file);
 	if (dentry)
@@ -367,11 +370,7 @@ out:
 	if (dir)
 		free(dir);
 
-	if (file->private_data)
-		kfree(file->private_data);
-	file->private_data = NULL;
-	file->f_pos = 2;
-	return 0;
+	return ret;
 }
 
 static unsigned long ubifs_findfile(struct super_block *sb, char *filename)
@@ -379,9 +378,12 @@ static unsigned long ubifs_findfile(struct super_block *sb, char *filename)
 	int ret;
 	char *next;
 	char fpath[128];
+	char symlinkpath[128];
 	char *name = fpath;
 	unsigned long root_inum = 1;
 	unsigned long inum;
+	int symlink_count = 0; /* Don't allow symlink recursion */
+	char link_name[64];
 
 	strcpy(fpath, filename);
 
@@ -397,6 +399,9 @@ static unsigned long ubifs_findfile(struct super_block *sb, char *filename)
 		return inum;
 
 	for (;;) {
+		struct inode *inode;
+		struct ubifs_inode *ui;
+
 		/* Extract the actual part from the pathname.  */
 		next = strchr(name, '/');
 		if (next) {
@@ -406,18 +411,47 @@ static unsigned long ubifs_findfile(struct super_block *sb, char *filename)
 		}
 
 		ret = ubifs_finddir(sb, name, root_inum, &inum);
+		if (!ret)
+			return 0;
+		inode = ubifs_iget(sb, inum);
+
+		if (!inode)
+			return 0;
+		ui = ubifs_inode(inode);
+
+		if ((inode->i_mode & S_IFMT) == S_IFLNK) {
+			char buf[128];
+
+			/* We have some sort of symlink recursion, bail out */
+			if (symlink_count++ > 8) {
+				printf("Symlink recursion, aborting\n");
+				return 0;
+			}
+			memcpy(link_name, ui->data, ui->data_len);
+			link_name[ui->data_len] = '\0';
+
+			if (link_name[0] == '/') {
+				/* Absolute path, redo everything without
+				 * the leading slash */
+				next = name = link_name + 1;
+				root_inum = 1;
+				continue;
+			}
+			/* Relative to cur dir */
+			sprintf(buf, "%s/%s",
+					link_name, next == NULL ? "" : next);
+			memcpy(symlinkpath, buf, sizeof(buf));
+			next = name = symlinkpath;
+			continue;
+		}
 
 		/*
 		 * Check if directory with this name exists
 		 */
 
 		/* Found the node!  */
-		if (!next || *next == '\0') {
-			if (ret)
-				return inum;
-
-			break;
-		}
+		if (!next || *next == '\0')
+			return inum;
 
 		root_inum = inum;
 		name = next;
@@ -532,7 +566,8 @@ dump:
 	return -EINVAL;
 }
 
-static int do_readpage(struct ubifs_info *c, struct inode *inode, struct page *page)
+static int do_readpage(struct ubifs_info *c, struct inode *inode,
+		       struct page *page, int last_block_size)
 {
 	void *addr;
 	int err = 0, i;
@@ -566,17 +601,54 @@ static int do_readpage(struct ubifs_info *c, struct inode *inode, struct page *p
 			err = -ENOENT;
 			memset(addr, 0, UBIFS_BLOCK_SIZE);
 		} else {
-			ret = read_block(inode, addr, block, dn);
-			if (ret) {
-				err = ret;
-				if (err != -ENOENT)
-					break;
-			} else if (block + 1 == beyond) {
-				int dlen = le32_to_cpu(dn->size);
-				int ilen = i_size & (UBIFS_BLOCK_SIZE - 1);
+			/*
+			 * Reading last block? Make sure to not write beyond
+			 * the requested size in the destination buffer.
+			 */
+			if (((block + 1) == beyond) || last_block_size) {
+				void *buff;
+				int dlen;
 
-				if (ilen && ilen < dlen)
-					memset(addr + ilen, 0, dlen - ilen);
+				/*
+				 * We need to buffer the data locally for the
+				 * last block. This is to not pad the
+				 * destination area to a multiple of
+				 * UBIFS_BLOCK_SIZE.
+				 */
+				buff = malloc(UBIFS_BLOCK_SIZE);
+				if (!buff) {
+					printf("%s: Error, malloc fails!\n",
+					       __func__);
+					err = -ENOMEM;
+					break;
+				}
+
+				/* Read block-size into temp buffer */
+				ret = read_block(inode, buff, block, dn);
+				if (ret) {
+					err = ret;
+					if (err != -ENOENT) {
+						free(buff);
+						break;
+					}
+				}
+
+				if (last_block_size)
+					dlen = last_block_size;
+				else
+					dlen = le32_to_cpu(dn->size);
+
+				/* Now copy required size back to dest */
+				memcpy(addr, buff, dlen);
+
+				free(buff);
+			} else {
+				ret = read_block(inode, addr, block, dn);
+				if (ret) {
+					err = ret;
+					if (err != -ENOENT)
+						break;
+				}
 			}
 		}
 		if (++i >= UBIFS_BLOCKS_PER_PAGE)
@@ -614,10 +686,11 @@ int ubifs_load(char *filename, u32 addr, u32 size)
 	int err = 0;
 	int i;
 	int count;
-	char link_name[64];
-	struct ubifs_inode *ui;
+	int last_block_size = 0;
 
 	c->ubi = ubi_open_volume(c->vi.ubi_num, c->vi.vol_id, UBI_READONLY);
+	/* ubifs_findfile will resolve symlinks, so we know that we get
+	 * the real file here */
 	inum = ubifs_findfile(ubifs_sb, filename);
 	if (!inum) {
 		err = -1;
@@ -635,23 +708,6 @@ int ubifs_load(char *filename, u32 addr, u32 size)
 	}
 
 	/*
-	 * Check for symbolic link
-	 */
-	ui = ubifs_inode(inode);
-	if (((inode->i_mode & S_IFMT) == S_IFLNK) && ui->data_len) {
-		memcpy(link_name, ui->data, ui->data_len);
-		link_name[ui->data_len] = '\0';
-		printf("%s is linked to %s!\n", filename, link_name);
-		ubifs_iput(inode);
-
-		/*
-		 * Now we have the "real" filename, call ubifs_load()
-		 * again (recursive call) to load this file instead
-		 */
-		return ubifs_load(link_name, addr, size);
-	}
-
-	/*
 	 * If no size was specified or if size bigger than filesize
 	 * set size to filesize
 	 */
@@ -666,7 +722,13 @@ int ubifs_load(char *filename, u32 addr, u32 size)
 	page.index = 0;
 	page.inode = inode;
 	for (i = 0; i < count; i++) {
-		err = do_readpage(c, inode, &page);
+		/*
+		 * Make sure to not read beyond the requested size
+		 */
+		if (((i + 1) == count) && (size < inode->i_size))
+			last_block_size = size - (i * PAGE_SIZE);
+
+		err = do_readpage(c, inode, &page, last_block_size);
 		if (err)
 			break;
 
@@ -676,8 +738,10 @@ int ubifs_load(char *filename, u32 addr, u32 size)
 
 	if (err)
 		printf("Error reading file '%s'\n", filename);
-	else
+	else {
+		setenv_hex("filesize", size);
 		printf("Done\n");
+	}
 
 	ubifs_iput(inode);
 

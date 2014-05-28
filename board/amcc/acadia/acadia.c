@@ -2,23 +2,7 @@
  * (C) Copyright 2007
  * Stefan Roese, DENX Software Engineering, sr@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -57,7 +41,7 @@ int board_early_init_f(void)
 
 #if !defined(CONFIG_NAND_U_BOOT)
 	/* don't reinit PLL when booting via I2C bootstrap option */
-	mfsdr(SDR_PINSTP, reg);
+	mfsdr(SDR0_PINSTP, reg);
 	if (reg != 0xf0000000)
 		board_pll_init_f();
 #endif
@@ -65,25 +49,25 @@ int board_early_init_f(void)
 	acadia_gpio_init();
 
 	/* Configure 405EZ for NAND usage */
-	mtsdr(sdrnand0, SDR_NAND0_NDEN | SDR_NAND0_NDAREN | SDR_NAND0_NDRBEN);
-	mfsdr(sdrultra0, reg);
+	mtsdr(SDR0_NAND0, SDR_NAND0_NDEN | SDR_NAND0_NDAREN | SDR_NAND0_NDRBEN);
+	mfsdr(SDR0_ULTRA0, reg);
 	reg &= ~SDR_ULTRA0_CSN_MASK;
 	reg |= (SDR_ULTRA0_CSNSEL0 >> CONFIG_SYS_NAND_CS) |
 		SDR_ULTRA0_NDGPIOBP |
 		SDR_ULTRA0_EBCRDYEN |
 		SDR_ULTRA0_NFSRSTEN;
-	mtsdr(sdrultra0, reg);
+	mtsdr(SDR0_ULTRA0, reg);
 
 	/* USB Host core needs this bit set */
-	mfsdr(sdrultra1, reg);
-	mtsdr(sdrultra1, reg | SDR_ULTRA1_LEDNENABLE);
+	mfsdr(SDR0_ULTRA1, reg);
+	mtsdr(SDR0_ULTRA1, reg | SDR_ULTRA1_LEDNENABLE);
 
-	mtdcr(uicsr, 0xFFFFFFFF);	/* clear all ints */
-	mtdcr(uicer, 0x00000000);	/* disable all ints */
-	mtdcr(uiccr, 0x00000010);
-	mtdcr(uicpr, 0xFE7FFFF0);	/* set int polarities */
-	mtdcr(uictr, 0x00000010);	/* set int trigger levels */
-	mtdcr(uicsr, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr(UIC0SR, 0xFFFFFFFF);	/* clear all ints */
+	mtdcr(UIC0ER, 0x00000000);	/* disable all ints */
+	mtdcr(UIC0CR, 0x00000010);
+	mtdcr(UIC0PR, 0xFE7FFFF0);	/* set int polarities */
+	mtdcr(UIC0TR, 0x00000010);	/* set int trigger levels */
+	mtdcr(UIC0SR, 0xFFFFFFFF);	/* clear all ints */
 
 	return 0;
 }
@@ -102,15 +86,16 @@ int misc_init_f(void)
  */
 int checkboard(void)
 {
-	char *s = getenv("serial#");
+	char buf[64];
+	int i = getenv_f("serial#", buf, sizeof(buf));
 	u8 rev;
 
 	rev = in8(CONFIG_SYS_CPLD_BASE + 0);
 	printf("Board: Acadia - AMCC PPC405EZ Evaluation Board, Rev. %X", rev);
 
-	if (s != NULL) {
+	if (i > 0) {
 		puts(", serial# ");
-		puts(s);
+		puts(buf);
 	}
 	putc('\n');
 

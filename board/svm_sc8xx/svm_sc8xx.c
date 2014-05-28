@@ -2,23 +2,7 @@
  * (C) Copyright 2000, 2001, 2002
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -75,27 +59,26 @@ const uint sdram_table[] =
  * Return 1 for "SC8xx" type, 0 else.
  */
 
-int checkboard (void)
+int checkboard(void)
 {
-    char *s = getenv("serial#");
-    int board_type;
+	char buf[64];
+	int i;
+	int l = getenv_f("serial#", buf, sizeof(buf));
 
-    if (!s || strncmp(s, "SVM8", 4)) {
-	printf ("### No HW ID - assuming SVM SC8xx\n");
-	return (0);
-    }
+	if (l < 0 || strncmp(buf, "SVM8", 4)) {
+		printf("### No HW ID - assuming SVM SC8xx\n");
+		return (0);
+	}
 
-    board_type = 1;
+	for (i = 0; i < l; ++i) {
+		if (buf[i] == ' ')
+			break;
+		putc(buf[i]);
+	}
 
-    for (; *s; ++s) {
-	if (*s == ' ')
-	    break;
-	putc (*s);
-    }
+	putc('\n');
 
-    putc ('\n');
-
-    return (0);
+	return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -156,6 +139,6 @@ phys_size_t initdram (int board_type)
 #if defined(CONFIG_CMD_DOC)
 void doc_init (void)
 {
-	        doc_probe (CONFIG_SYS_DOC_BASE);
+		doc_probe (CONFIG_SYS_DOC_BASE);
 }
 #endif

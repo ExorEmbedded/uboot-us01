@@ -1,10 +1,11 @@
+#include <common.h>
 #include <exports.h>
 
 #ifndef GCC_VERSION
 #define GCC_VERSION (__GNUC__ * 1000 + __GNUC_MINOR__)
 #endif /* GCC_VERSION */
 
-#if defined(CONFIG_I386)
+#if defined(CONFIG_X86)
 /*
  * x86 does not have a dedicated register to store the pointer to
  * the global_data. Thus the jump table address is stored in a
@@ -38,17 +39,32 @@ gd_t *global_data;
 "	bctr\n"				\
 	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "r11");
 #elif defined(CONFIG_ARM)
+#ifdef CONFIG_ARM64
 /*
- * r8 holds the pointer to the global_data, ip is a call-clobbered
+ * x18 holds the pointer to the global_data, x9 is a call-clobbered
  * register
  */
 #define EXPORT_FUNC(x) \
 	asm volatile (			\
 "	.globl " #x "\n"		\
 #x ":\n"				\
-"	ldr	ip, [r8, %0]\n"		\
+"	ldr	x9, [x18, %0]\n"		\
+"	ldr	x9, [x9, %1]\n"		\
+"	br	x9\n"		\
+	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "x9");
+#else
+/*
+ * r9 holds the pointer to the global_data, ip is a call-clobbered
+ * register
+ */
+#define EXPORT_FUNC(x) \
+	asm volatile (			\
+"	.globl " #x "\n"		\
+#x ":\n"				\
+"	ldr	ip, [r9, %0]\n"		\
 "	ldr	pc, [ip, %1]\n"		\
 	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "ip");
+#endif
 #elif defined(CONFIG_MIPS)
 /*
  * k0 ($26) holds the pointer to the global_data; t9 ($25) is a call-
@@ -65,26 +81,9 @@ gd_t *global_data;
 "	lw	$25, %1($25)\n"		\
 "	jr	$25\n"			\
 	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "t9");
-#elif defined(CONFIG_NIOS)
-/*
- * %g7 holds the pointer to the global_data. %g0 is call clobbered.
- */
-#define EXPORT_FUNC(x) \
-	asm volatile (			\
-"	.globl " #x "\n"		\
-#x ":\n"				\
-"	pfx	%%hi(%0)\n"		\
-"	movi	%%g0, %%lo(%0)\n"	\
-"	add	%%g0, %%g7\n"		\
-"	ld	%%g0, [%%g0]\n"		\
-"	pfx	%1\n"			\
-"	ld	%%g0, [%%g0]\n"		\
-"	jmp	%%g0\n"			\
-"	nop	\n"			\
-	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x) : "r0");
 #elif defined(CONFIG_NIOS2)
 /*
- * r15 holds the pointer to the global_data, r8 is call-clobbered
+ * gp holds the pointer to the global_data, r8 is call-clobbered
  */
 #define EXPORT_FUNC(x) \
 	asm volatile (			\
@@ -92,11 +91,11 @@ gd_t *global_data;
 #x ":\n"				\
 "	movhi	r8, %%hi(%0)\n"		\
 "	ori	r8, r0, %%lo(%0)\n"	\
-"	add	r8, r8, r15\n"		\
+"	add	r8, r8, gp\n"		\
 "	ldw	r8, 0(r8)\n"		\
 "	ldw	r8, %1(r8)\n"		\
 "	jmp	r8\n"			\
-	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "r15");
+	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "gp");
 #elif defined(CONFIG_M68K)
 /*
  * d7 holds the pointer to the global_data, a0 is a call-clobbered
@@ -127,14 +126,14 @@ gd_t *global_data;
 	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "r5");
 #elif defined(CONFIG_BLACKFIN)
 /*
- * P5 holds the pointer to the global_data, P0 is a call-clobbered
+ * P3 holds the pointer to the global_data, P0 is a call-clobbered
  * register
  */
 #define EXPORT_FUNC(x)			\
 	asm volatile (			\
 "	.globl _" #x "\n_"		\
 #x ":\n"				\
-"	P0 = [P5 + %0]\n"		\
+"	P0 = [P3 + %0]\n"		\
 "	P0 = [P0 + %1]\n"		\
 "	JUMP (P0)\n"			\
 	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "P0");
@@ -181,11 +180,53 @@ gd_t *global_data;
 "	or %%g1, %%g7, %%g1\n"				\
 "	ld [%%g1], %%g1\n"				\
 "	ld [%%g1 + %1], %%g1\n"				\
-"	call %%g1\n"					\
+"	jmp %%g1\n"					\
 "	nop\n"						\
-	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x) : "g1" );
-
+	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "g1" );
+#elif defined(CONFIG_NDS32)
+/*
+ * r16 holds the pointer to the global_data. gp is call clobbered.
+ * not support reduced register (16 GPR).
+ */
+#define EXPORT_FUNC(x) \
+	asm volatile (			\
+"	.globl " #x "\n"		\
+#x ":\n"				\
+"	lwi	$r16, [$gp + (%0)]\n"	\
+"	lwi	$r16, [$r16 + (%1)]\n"	\
+"	jr	$r16\n"			\
+	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "$r16");
+#elif defined(CONFIG_OPENRISC)
+/*
+ * r10 holds the pointer to the global_data, r13 is a call-clobbered
+ * register
+ */
+#define EXPORT_FUNC(x) \
+	asm volatile (			\
+"	.globl " #x "\n"		\
+#x ":\n"				\
+"	l.lwz	r13, %0(r10)\n"	\
+"	l.lwz	r13, %1(r13)\n"	\
+"	l.jr	r13\n"		\
+"	l.nop\n"				\
+	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "r13");
+#elif defined(CONFIG_ARC)
+/*
+ * r25 holds the pointer to the global_data. r10 is call clobbered.
+  */
+#define EXPORT_FUNC(x) \
+	asm volatile( \
+"	.align 4\n" \
+"	.globl " #x "\n" \
+#x ":\n" \
+"	ld	r10, [r25, %0]\n" \
+"	ld	r10, [r10, %1]\n" \
+"	j	[r10]\n" \
+	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "r10");
 #else
+/*"	addi	$sp, $sp, -24\n"	\
+"	br	$r16\n"			\*/
+
 #error stubs definition missing for this architecture
 #endif
 
@@ -204,18 +245,17 @@ void __attribute__((unused)) dummy(void)
 #include <_exports.h>
 }
 
-extern unsigned long __bss_start, _end;
+#include <asm/sections.h>
 
-void app_startup(char **argv)
+void app_startup(char * const *argv)
 {
-	unsigned char * cp = (unsigned char *) &__bss_start;
+	char *cp = __bss_start;
 
 	/* Zero out BSS */
-	while (cp < (unsigned char *)&_end) {
+	while (cp < _end)
 		*cp++ = 0;
-	}
 
-#if defined(CONFIG_I386)
+#if defined(CONFIG_X86)
 	/* x86 does not have a dedicated register for passing global_data */
 	global_data = (gd_t *)argv[-1];
 	jt = global_data->jt;

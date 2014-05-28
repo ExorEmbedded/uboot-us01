@@ -2,23 +2,7 @@
  * (C) Copyright 2005
  * Heiko Schocher, DENX Software Engineering, <hs@denx.de>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -51,7 +35,7 @@ const iop_conf_t iop_conf_tab[4][32] = {
 	/* PA27 */ {   1,   1,	 1,   0,   0,	0   }, /* FCC1 RXDV */
 	/* PA26 */ {   1,   1,	 1,   0,   0,	0   }, /* FCC1 RXER */
 	/* PA25 */ {   0,   0,	 0,   0,   1,	0   }, /* 8247_P0 */
-#if defined(CONFIG_SOFT_I2C)
+#if defined(CONFIG_SYS_I2C_SOFT)
 	/* PA24 */ {   1,   0,	 0,   0,   1,	1   }, /* I2C_SDA2 */
 	/* PA23 */ {   1,   0,	 0,   1,   1,	1   }, /* I2C_SCL2 */
 #else /* normal I/O port pins */
@@ -281,10 +265,9 @@ phys_size_t initdram (int board_type)
 	volatile immap_t *immap = (immap_t *) CONFIG_SYS_IMMR;
 	volatile memctl8260_t *memctl = &immap->im_memctl;
 
-	long psize, lsize;
+	long psize;
 
 	psize = 16 * 1024 * 1024;
-	lsize = 0;
 
 	memctl->memc_psrt = CONFIG_SYS_PSRT;
 	memctl->memc_mptpr = CONFIG_SYS_MPTPR;
@@ -400,24 +383,8 @@ int board_nand_init(struct nand_chip *nand)
 #endif	/* CONFIG_CMD_NAND */
 
 #if defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_LIBFDT)
-/*
- * update "memory" property in the blob
- */
-void ft_blob_update(void *blob, bd_t *bd)
-{
-	int ret;
-
-	ret = fdt_fixup_memory(blob, (u64)bd->bi_memstart, (u64)bd->bi_memsize);
-
-	if (ret < 0) {
-		printf("ft_blob_update(): cannot set /memory/reg "
-			"property err:%s\n", fdt_strerror(ret));
-	}
-}
-
 void ft_board_setup(void *blob, bd_t *bd)
 {
 	ft_cpu_setup( blob, bd);
-	ft_blob_update(blob, bd);
 }
 #endif /* defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_OF_LIBFDT) */

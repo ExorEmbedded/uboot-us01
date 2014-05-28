@@ -8,27 +8,12 @@
  * (C) Copyright 2001
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
 #include <linux/byteorder/swab.h>
+#include <asm/sections.h>
 
 
 flash_info_t flash_info[CONFIG_SYS_MAX_FLASH_BANKS];	/* info for FLASH chips */
@@ -72,7 +57,7 @@ unsigned long flash_init (void)
 	 */
 	flash_protect (FLAG_PROTECT_SET,
 		       CONFIG_SYS_FLASH_BASE,
-		       CONFIG_SYS_FLASH_BASE + _bss_start - _armboot_start,
+		       CONFIG_SYS_FLASH_BASE + (__bss_end - __bss_start),
 		       &flash_info[0]);
 
 	return size;
@@ -206,9 +191,10 @@ static ulong flash_get_size (unsigned char * addr, flash_info_t * info)
 
 int flash_erase (flash_info_t * info, int s_first, int s_last)
 {
-	int flag, prot, sect;
+	int prot, sect;
 	ulong type;
 	int rcode = 0;
+	ulong start;
 
 	if ((s_first < 0) || (s_first > s_last)) {
 		if (info->flash_id == FLASH_UNKNOWN) {
@@ -239,7 +225,7 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 		printf ("\n");
 
 	/* Disable interrupts which might cause a timeout here */
-	flag = disable_interrupts ();
+	disable_interrupts();
 
 	/* Start erase on unprotected sectors */
 	for (sect = s_first; sect <= s_last; sect++) {
@@ -250,7 +236,7 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 			printf ("Erasing sector %2d ... ", sect);
 
 			/* arm simple, non interrupt dependent timer */
-			reset_timer_masked ();
+			start = get_timer(0);
 
 			addr = (volatile unsigned char *) (info->start[sect]);
 			*addr = 0x50;	/* clear status register */
@@ -258,7 +244,7 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 			*addr = 0xD0;	/* erase confirm */
 
 			while (((status = *addr) & 0x80) != 0x80) {
-				if (get_timer_masked () >
+				if (get_timer(start) >
 				    CONFIG_SYS_FLASH_ERASE_TOUT) {
 					printf ("Timeout\n");
 					*addr = 0xB0;	/* suspend erase */
@@ -369,7 +355,7 @@ static int write_data (flash_info_t * info, ulong dest, unsigned char data)
 {
 	volatile unsigned char *addr = (volatile unsigned char *) dest;
 	ulong status;
-	int flag;
+	ulong start;
 
 	/* Check if Flash is (sufficiently) erased */
 	if ((*addr & data) != data) {
@@ -378,17 +364,17 @@ static int write_data (flash_info_t * info, ulong dest, unsigned char data)
 		return (2);
 	}
 	/* Disable interrupts which might cause a timeout here */
-	flag = disable_interrupts ();
+	disable_interrupts();
 
 	*addr = 0x40;	/* write setup */
 	*addr = data;
 
 	/* arm simple, non interrupt dependent timer */
-	reset_timer_masked ();
+	start = get_timer(0);
 
 	/* wait while polling the status register */
 	while (((status = *addr) & 0x80) != 0x80) {
-		if (get_timer_masked () > CONFIG_SYS_FLASH_WRITE_TOUT) {
+		if (get_timer(start) > CONFIG_SYS_FLASH_WRITE_TOUT) {
 			*addr = 0xFF;	/* restore read mode */
 			return (1);
 		}

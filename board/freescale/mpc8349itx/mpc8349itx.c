@@ -1,23 +1,7 @@
 /*
  * Copyright (C) Freescale Semiconductor, Inc. 2006.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS for A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -43,23 +27,27 @@
 int fixed_sdram(void)
 {
 	volatile immap_t *im = (immap_t *) CONFIG_SYS_IMMR;
-	u32 ddr_size;		/* The size of RAM, in bytes */
-	u32 ddr_size_log2 = 0;
-
-	for (ddr_size = CONFIG_SYS_DDR_SIZE * 0x100000; ddr_size > 1; ddr_size >>= 1) {
-		if (ddr_size & 1) {
-			return -1;
-		}
-		ddr_size_log2++;
-	}
+	/* The size of RAM, in bytes */
+	u32 ddr_size = CONFIG_SYS_DDR_SIZE << 20;
+	u32 ddr_size_log2 = __ilog2(ddr_size);
 
 	im->sysconf.ddrlaw[0].ar =
 	    LAWAR_EN | ((ddr_size_log2 - 1) & LAWAR_SIZE);
 	im->sysconf.ddrlaw[0].bar = CONFIG_SYS_DDR_SDRAM_BASE & 0xfffff000;
 
-	/* Only one CS0 for DDR */
-	im->ddr.csbnds[0].csbnds = 0x0000000f;
-	im->ddr.cs_config[0] = CONFIG_SYS_DDR_CONFIG;
+#if ((CONFIG_SYS_DDR_SDRAM_BASE & 0x00FFFFFF) != 0)
+#warning Chip select bounds is only configurable in 16MB increments
+#endif
+	im->ddr.csbnds[0].csbnds =
+		((CONFIG_SYS_DDR_SDRAM_BASE >> CSBNDS_SA_SHIFT) & CSBNDS_SA) |
+		(((CONFIG_SYS_DDR_SDRAM_BASE + ddr_size - 1) >>
+				CSBNDS_EA_SHIFT) & CSBNDS_EA);
+	im->ddr.cs_config[0] = CONFIG_SYS_DDR_CS0_CONFIG;
+
+	/* Only one CS for DDR */
+	im->ddr.cs_config[1] = 0;
+	im->ddr.cs_config[2] = 0;
+	im->ddr.cs_config[3] = 0;
 
 	debug("cs0_bnds = 0x%08x\n", im->ddr.csbnds[0].csbnds);
 	debug("cs0_config = 0x%08x\n", im->ddr.cs_config[0]);
@@ -221,15 +209,14 @@ int misc_init_f(void)
 		0xfffffc00, 0xfffffc00, 0xfffffc00, 0xfffffc01
 	};
 	volatile immap_t *immap = (immap_t *) CONFIG_SYS_IMMR;
-	volatile fsl_lbus_t *lbus = &immap->lbus;
 
-	lbus->bank[3].br = CONFIG_SYS_BR3_PRELIM;
-	lbus->bank[3].or = CONFIG_SYS_OR3_PRELIM;
+	set_lbc_br(3, CONFIG_SYS_BR3_PRELIM);
+	set_lbc_or(3, CONFIG_SYS_OR3_PRELIM);
 
 	/* Program the MAMR. RFEN=0, OP=00, UWPL=1, AM=000, DS=01, G0CL=000,
 	   GPL4=0, RLF=0001, WLF=0001, TLF=0001, MAD=000000
 	 */
-	lbus->mamr = 0x08404440;
+	immap->im_lbc.mamr = 0x08404440;
 
 	upmconfig(0, UPMATable, sizeof(UPMATable) / sizeof(UPMATable[0]));
 
@@ -260,8 +247,7 @@ int misc_init_r(void)
 {
 	int rc = 0;
 
-#ifdef CONFIG_HARD_I2C
-
+#if defined(CONFIG_SYS_I2C)
 	unsigned int orig_bus = i2c_get_bus_num();
 	u8 i2c_data;
 

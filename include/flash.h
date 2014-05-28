@@ -2,23 +2,7 @@
  * (C) Copyright 2000-2005
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef _FLASH_H_
@@ -44,9 +28,10 @@ typedef struct {
 	ulong	buffer_write_tout;	/* maximum buffer write timeout		*/
 	ushort	vendor;			/* the primary vendor id		*/
 	ushort	cmd_reset;		/* vendor specific reset command	*/
+	uchar   cmd_erase_sector;	/* vendor specific erase sect. command	*/
 	ushort	interface;		/* used for x8/x16 adjustments		*/
 	ushort	legacy_unlock;		/* support Intel legacy (un)locking	*/
-	uchar	manufacturer_id;	/* manufacturer id			*/
+	ushort	manufacturer_id;	/* manufacturer id			*/
 	ushort	device_id;		/* device id				*/
 	ushort	device_id2;		/* extended device id			*/
 	ushort	ext_addr;		/* extended query table address		*/
@@ -57,6 +42,8 @@ typedef struct {
 	const char *name;		/* human-readable name	                */
 #endif
 } flash_info_t;
+
+extern flash_info_t flash_info[]; /* info for FLASH chips	*/
 
 typedef unsigned long flash_sect_t;
 
@@ -90,6 +77,7 @@ typedef unsigned long flash_sect_t;
 /* Prototypes */
 
 extern unsigned long flash_init (void);
+extern void flash_protect_default(void);
 extern void flash_print_info (flash_info_t *);
 extern int flash_erase	(flash_info_t *, int, int);
 extern int flash_sect_erase (ulong addr_first, ulong addr_last);
@@ -138,6 +126,7 @@ extern flash_info_t *flash_get_info(ulong base);
 #define ERR_UNKNOWN_FLASH_VENDOR	32
 #define ERR_UNKNOWN_FLASH_TYPE		64
 #define ERR_PROG_ERROR			128
+#define ERR_ABORTED			256
 
 /*-----------------------------------------------------------------------
  * Protection Flags for flash_protect():
@@ -154,6 +143,7 @@ extern flash_info_t *flash_get_info(ulong base);
  * Device IDs
  */
 
+/* Manufacturers inside bank 0 have ids like 0x00xx00xx */
 #define AMD_MANUFACT	0x00010001	/* AMD	   manuf. ID in D23..D16, D7..D0 */
 #define FUJ_MANUFACT	0x00040004	/* FUJITSU manuf. ID in D23..D16, D7..D0 */
 #define ATM_MANUFACT	0x001F001F	/* ATMEL */
@@ -166,6 +156,13 @@ extern flash_info_t *flash_get_info(ulong base);
 #define TOSH_MANUFACT	0x00980098	/* TOSHIBA manuf. ID in D23..D16, D7..D0 */
 #define MT2_MANUFACT	0x002C002C	/* alternate MICRON manufacturer ID*/
 #define EXCEL_MANUFACT	0x004A004A	/* Excel Semiconductor			*/
+#define AMIC_MANUFACT	0x00370037	/* AMIC    manuf. ID in D23..D16, D7..D0 */
+#define WINB_MANUFACT	0x00DA00DA	/* Winbond manuf. ID in D23..D16, D7..D0 */
+
+/* Manufacturers inside bank 1 have ids like 0x01xx01xx */
+#define EON_MANUFACT	0x011C011C	/* EON     manuf. ID in D23..D16, D7..D0 */
+
+/* Manufacturers inside bank 2 have ids like 0x02xx02xx */
 
 					/* Micron Technologies (INTEL compat.)	*/
 #define MT_ID_28F400_T	0x44704470	/* 28F400B3 ID ( 4 M, top boot sector)	*/
@@ -336,8 +333,7 @@ extern flash_info_t *flash_get_info(ulong base);
 
 #define TOSH_ID_FVT160	0xC2		/* TC58FVT160 ID (16 M, top )		*/
 #define TOSH_ID_FVB160	0x43		/* TC58FVT160 ID (16 M, bottom )	*/
-#define PHILIPS_LPC2292 0x0401FF13  /* LPC2292 internal FLASH			*/
-#define SPANSION_ID_S29GL01GP 0x017E2801 /* Spansion S29GL01GP */
+#define NUMONYX_256MBIT	0x8922		/* Numonyx P33/30 256MBit 65nm	*/
 
 /*-----------------------------------------------------------------------
  * Internal FLASH identification codes

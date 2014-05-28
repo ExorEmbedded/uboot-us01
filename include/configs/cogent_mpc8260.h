@@ -2,23 +2,7 @@
  * (C) Copyright 2000
  * Murray Jensen <Murray.Jensen@cmst.csiro.au>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -37,7 +21,10 @@
 #define CONFIG_COGENT		1	/* using Cogent Modular Architecture */
 #define CONFIG_CPM2		1	/* Has a CPM2 */
 
+#define	CONFIG_SYS_TEXT_BASE	0xfff00000
+
 #define	CONFIG_MISC_INIT_F	1	/* Use misc_init_f()		*/
+#define	CONFIG_MISC_INIT_R		/* Use misc_init_r()		*/
 
 /* Cogent Modular Architecture options */
 #define CONFIG_CMA282		1	/* ...on a CMA282 CPU module	*/
@@ -105,7 +92,7 @@
 #define CONFIG_CMD_KGDB
 
 #undef CONFIG_CMD_NET
-
+#undef CONFIG_CMD_NFS
 
 #ifdef DEBUG
 #define CONFIG_BOOTDELAY	-1	/* autoboot disabled		*/
@@ -137,7 +124,6 @@
  * Miscellaneous configurable options
  */
 #define	CONFIG_SYS_LONGHELP			/* undef to save memory		*/
-#define	CONFIG_SYS_PROMPT	"=> "		/* Monitor Command Prompt	*/
 #if defined(CONFIG_CMD_KGDB)
 #define	CONFIG_SYS_CBSIZE	1024		/* Console I/O Buffer Size	*/
 #else
@@ -151,8 +137,6 @@
 #define CONFIG_SYS_MEMTEST_END		0x01c00000	/* 4 ... 28 MB in DRAM	*/
 
 #define	CONFIG_SYS_LOAD_ADDR		0x100000	/* default load address	*/
-
-#define	CONFIG_SYS_HZ		1000		/* decrementer freq: 1 ms ticks	*/
 
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200, 230400 }
 
@@ -221,9 +205,8 @@
  * Definitions for initial stack pointer and data area (in DPRAM)
  */
 #define CONFIG_SYS_INIT_RAM_ADDR	CONFIG_SYS_IMMR
-#define	CONFIG_SYS_INIT_RAM_END	0x4000	/* End of used area in DPRAM	*/
-#define	CONFIG_SYS_GBL_DATA_SIZE	128  /* size in bytes reserved for initial data */
-#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_END - CONFIG_SYS_GBL_DATA_SIZE)
+#define	CONFIG_SYS_INIT_RAM_SIZE	0x4000	/* Size of used area in DPRAM	*/
+#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define	CONFIG_SYS_INIT_SP_OFFSET	CONFIG_SYS_GBL_DATA_OFFSET
 
 /*-----------------------------------------------------------------------
@@ -237,7 +220,7 @@
 #else
 #define CONFIG_SYS_FLASH_BASE		CMA_MB_FLASH_BASE	/* flash on m/b */
 #endif
-#define	CONFIG_SYS_MONITOR_BASE	TEXT_BASE
+#define	CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_TEXT_BASE
 #define	CONFIG_SYS_MONITOR_LEN		(256 << 10)	/* Reserve 256 kB for Monitor	*/
 #define	CONFIG_SYS_MALLOC_LEN		(128 << 10)	/* Reserve 128 kB for malloc()*/
 
@@ -367,7 +350,7 @@
  * (the *_SIZE vars must be a power of 2)
  */
 
-#define CONFIG_SYS_CMA_CS0_BASE	TEXT_BASE	/* EPROM */
+#define CONFIG_SYS_CMA_CS0_BASE	CONFIG_SYS_TEXT_BASE	/* EPROM */
 #define CONFIG_SYS_CMA_CS0_SIZE	(1 << 20)
 #if 0
 #define CONFIG_SYS_CMA_CS2_BASE	0x10000000	/* Local Bus SDRAM */
@@ -406,13 +389,4 @@
 #endif
 
 #endif
-
-/*
- * Internal Definitions
- *
- * Boot Flags
- */
-#define	BOOTFLAG_COLD	0x01		/* Normal Power-On: Boot from FLASH*/
-#define BOOTFLAG_WARM	0x02		/* Software reboot		*/
-
 #endif	/* __CONFIG_H */

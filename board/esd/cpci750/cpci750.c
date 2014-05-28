@@ -2,23 +2,7 @@
  * (C) Copyright 2001
  * Josh Huber <huber@mclx.com>, Mission Critical Linux, Inc.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  *
  * modifications for the DB64360 eval board based by Ingo.Assmus@keymile.com
  * modifications for the cpci750 by reinhard.arlt@esd-electronics.com
@@ -122,7 +106,6 @@ static char show_config_tab[][15] = {{"PCI0DLL_2     "},  /* 31 */
 
 extern flash_info_t flash_info[];
 
-extern int do_bootm (cmd_tbl_t *, int, int, char *[]);
 extern int do_bootvx (cmd_tbl_t *, int, int, char *[]);
 
 /* ------------------------------------------------------------------------- */
@@ -562,12 +545,12 @@ int display_mem_map (void)
 /*
  * Command loadpci: wait for signal from host and boot image.
  */
-int do_loadpci(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_loadpci(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	volatile unsigned int *ptr;
 	int count = 0;
 	int count2 = 0;
-	int status;
+	int status = 0;
 	char addr[16];
 	char str[] = "\\|/-";
 	char *local_args[2];
@@ -623,7 +606,7 @@ int do_loadpci(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		break;
 	}
 
-	return 0;
+	return status;
 }
 
 U_BOOT_CMD(
@@ -954,22 +937,18 @@ int mem_test_walk (void)
 /*********************************************************************/
 int testdram (void)
 {
-	char *s;
 	int rundata    = 0;
 	int runaddress = 0;
 	int runwalk    = 0;
 
 #ifdef CONFIG_SYS_DRAM_TEST_DATA
-	s = getenv ("testdramdata");
-	rundata = (s && (*s == 'y')) ? 1 : 0;
+	rundata = getenv_yesno("testdramdata") == 1;
 #endif
 #ifdef CONFIG_SYS_DRAM_TEST_ADDRESS
-	s = getenv ("testdramaddress");
-	runaddress = (s && (*s == 'y')) ? 1 : 0;
+	runaddress = getenv_yesno("testdramaddress") == 1;
 #endif
 #ifdef CONFIG_SYS_DRAM_TEST_WALK
-	s = getenv ("testdramwalk");
-	runwalk = (s && (*s == 'y')) ? 1 : 0;
+	runwalk = getenv_yesno("testdramwalk") == 1;
 #endif
 
 	if ((rundata == 1) || (runaddress == 1) || (runwalk == 1)) {
@@ -1056,7 +1035,7 @@ void board_prebootm_init ()
 	dcache_disable ();
 }
 
-int do_show_config(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+int do_show_config(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	unsigned int reset_sample_low;
 	unsigned int reset_sample_high;
@@ -1090,3 +1069,20 @@ U_BOOT_CMD(
 	"Show Marvell strapping register",
 	"Show Marvell strapping register (ResetSampleLow ResetSampleHigh)"
 );
+
+int do_pldver(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	printf("PLD version:0x%02x\n", in_8((void *)CONFIG_SYS_PLD_VER));
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	pldver, 1, 1, do_pldver,
+	"Show PLD version",
+	"Show PLD version)");
+
+int board_eth_init(bd_t *bis)
+{
+	return mv6436x_eth_initialize(bis);
+}

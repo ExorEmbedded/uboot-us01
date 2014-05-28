@@ -5,23 +5,7 @@
  *
  * (C) Copyright 2003 Stefan Roese, stefan.roese@esd-electronics.com
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -53,7 +37,7 @@ static TSI148_DEV *dev;
 
 int tsi148_init(void)
 {
-	int j, result, lastError = 0;
+	int j, result;
 	pci_dev_t busdevfn;
 	unsigned int val;
 
@@ -69,8 +53,7 @@ int tsi148_init(void)
 	dev = malloc(sizeof(*dev));
 	if (NULL == dev) {
 		puts("Tsi148: No memory!\n");
-		result = -1;
-		goto break_20;
+		return -1;
 	}
 
 	memset(dev, 0, sizeof(*dev));
@@ -139,8 +122,6 @@ int tsi148_init(void)
  break_30:
 	free(dev);
 	dev = NULL;
- break_20:
-	lastError = result;
 
 	return result;
 }
@@ -402,7 +383,7 @@ int tsi148_vme_crg_window(unsigned int vmeAddr, int vam)
 /*
  * Tundra Tsi148 configuration
  */
-int do_tsi148(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_tsi148(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ulong addr1 = 0, addr2 = 0, size = 0, vam = 0, vdw = 0;
 	char cmd = 'x';
@@ -419,7 +400,7 @@ int do_tsi148(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	if (argc > 5)
 		vam = simple_strtoul(argv[5], NULL, 16);
 	if (argc > 6)
-		vdw = simple_strtoul(argv[7], NULL, 16);
+		vdw = simple_strtoul(argv[6], NULL, 16);
 
 	switch (cmd) {
 	case 'c':
@@ -465,7 +446,7 @@ int do_tsi148(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 
 U_BOOT_CMD(
-	tsi148,	8,	1,	do_tsi148,
+	tsi148,	7,	1,	do_tsi148,
 	"initialize and configure Turndra Tsi148\n",
 	"init\n"
 	"    - initialize tsi148\n"

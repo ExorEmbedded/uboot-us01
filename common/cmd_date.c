@@ -2,23 +2,7 @@
  * (C) Copyright 2001
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -31,23 +15,32 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-const char *weekdays[] = {
+static const char * const weekdays[] = {
 	"Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur",
 };
 
+#ifdef CONFIG_NEEDS_MANUAL_RELOC
 #define RELOC(a)	((typeof(a))((unsigned long)(a) + gd->reloc_off))
+#else
+#define RELOC(a)	a
+#endif
 
-int mk_date (char *, struct rtc_time *);
+int mk_date (const char *, struct rtc_time *);
 
-int do_date (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+static int do_date(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct rtc_time tm;
 	int rcode = 0;
 	int old_bus;
 
 	/* switch to correct I2C bus */
+#ifdef CONFIG_SYS_I2C
+	old_bus = i2c_get_bus_num();
+	i2c_set_bus_num(CONFIG_SYS_RTC_BUS_NUM);
+#else
 	old_bus = I2C_GET_BUS();
 	I2C_SET_BUS(CONFIG_SYS_RTC_BUS_NUM);
+#endif
 
 	switch (argc) {
 	case 2:			/* set date & time */
@@ -67,9 +60,9 @@ int do_date (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 				/* and write to RTC */
 				rcode = rtc_set (&tm);
 				if(rcode)
-					puts("## Set date failled\n");
+					puts("## Set date failed\n");
 			} else {
-				puts("## Get date failled\n");
+				puts("## Get date failed\n");
 			}
 		}
 		/* FALL TROUGH */
@@ -77,7 +70,7 @@ int do_date (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		rcode = rtc_get (&tm);
 
 		if (rcode) {
-			puts("## Get date failled\n");
+			puts("## Get date failed\n");
 			break;
 		}
 
@@ -89,12 +82,15 @@ int do_date (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 		break;
 	default:
-		cmd_usage(cmdtp);
-		rcode = 1;
+		rcode = CMD_RET_USAGE;
 	}
 
 	/* switch back to original I2C bus */
+#ifdef CONFIG_SYS_I2C
+	i2c_set_bus_num(old_bus);
+#else
 	I2C_SET_BUS(old_bus);
+#endif
 
 	return rcode;
 }
@@ -102,7 +98,7 @@ int do_date (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 /*
  * simple conversion of two-digit string with error checking
  */
-static int cnvrt2 (char *str, int *valp)
+static int cnvrt2 (const char *str, int *valp)
 {
 	int val;
 
@@ -127,7 +123,7 @@ static int cnvrt2 (char *str, int *valp)
  * Some basic checking for valid values is done, but this will not catch
  * all possible error conditions.
  */
-int mk_date (char *datestr, struct rtc_time *tmp)
+int mk_date (const char *datestr, struct rtc_time *tmp)
 {
 	int len, val;
 	char *ptr;

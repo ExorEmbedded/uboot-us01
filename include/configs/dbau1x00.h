@@ -2,23 +2,7 @@
  * (C) Copyright 2003
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -28,7 +12,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define CONFIG_MIPS32		1  /* MIPS32 CPU core	*/
 #define CONFIG_DBAU1X00		1
 #define CONFIG_SOC_AU1X00	1  /* alchemy series cpu */
 
@@ -59,7 +42,6 @@
 #define CONFIG_BAUDRATE		115200
 
 /* valid baudrates */
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 #define	CONFIG_TIMESTAMP		/* Print image info with timestamp */
 #undef	CONFIG_BOOTARGS
@@ -150,8 +132,6 @@
 
 #define CONFIG_SYS_MIPS_TIMER_FREQ	(CONFIG_SYS_MHZ * 1000000)
 
-#define CONFIG_SYS_HZ			1000
-
 #define CONFIG_SYS_SDRAM_BASE		0x80000000     /* Cached addr */
 
 #define	CONFIG_SYS_LOAD_ADDR		0x81000000     /* default load address	*/
@@ -186,7 +166,7 @@
 #define CONFIG_FLASH_CFI_DRIVER    1
 
 /* The following #defines are needed to get flash environment right */
-#define	CONFIG_SYS_MONITOR_BASE	TEXT_BASE
+#define	CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_TEXT_BASE
 #define	CONFIG_SYS_MONITOR_LEN		(192 << 10)
 
 #define CONFIG_SYS_INIT_SP_OFFSET	0x400000
@@ -208,7 +188,6 @@
 
 #define CONFIG_NR_DRAM_BANKS	2
 
-#define CONFIG_NET_MULTI
 
 #ifdef CONFIG_DBAU1550
 #define MEM_SIZE 192

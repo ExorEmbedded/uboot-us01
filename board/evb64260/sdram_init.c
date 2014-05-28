@@ -2,23 +2,7 @@
  * (C) Copyright 2001
  * Josh Huber <huber@mclx.com>, Mission Critical Linux, Inc.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /* sdram_init.c - automatic memory sizing */
@@ -29,6 +13,7 @@
 #include <galileo/pci.h>
 #include <galileo/gt64260R.h>
 #include <net.h>
+#include <linux/compiler.h>
 
 #include "eth.h"
 #include "mpsc.h"
@@ -330,7 +315,8 @@ static int check_dimm (uchar slot, sdram_info_t * info)
 static int setup_sdram_common (sdram_info_t info[2])
 {
 	ulong tmp;
-	int tpar = 2, tras_clocks = 5, registered = 1, ecc = 2;
+	int tpar = 2, tras_clocks = 5, registered = 1;
+	__maybe_unused int ecc = 2;
 
 	if (!info[0].banks && !info[1].banks)
 		return 0;
@@ -407,8 +393,9 @@ static int setup_sdram_common (sdram_info_t info[2])
 /* sets up the GT properly with information passed in */
 static int setup_sdram (sdram_info_t * info)
 {
-	ulong tmp, check;
+	ulong tmp;
 	ulong *addr = 0;
+	__maybe_unused ulong check;
 	int i;
 
 	/* sanity checking */

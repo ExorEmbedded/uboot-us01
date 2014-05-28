@@ -3,24 +3,7 @@
  * Sysgo Real-Time Solutions, AG <www.elinos.com>
  * Pavel Bartusek <pba@sysgo.com>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- *
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -47,47 +30,30 @@
 #define PRINTF(fmt,args...)
 #endif
 
-int do_reiserls (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_reiserls (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	char *filename = "/";
-	int dev=0;
-	int part=1;
-	char *ep;
+	int dev, part;
 	block_dev_desc_t *dev_desc=NULL;
-	int part_length;
+	disk_partition_t info;
 
-	if (argc < 3) {
-		cmd_usage(cmdtp);
+	if (argc < 3)
+		return CMD_RET_USAGE;
+
+	part = get_device_and_partition(argv[1], argv[2], &dev_desc, &info, 1);
+	if (part < 0)
 		return 1;
-	}
-	dev = (int)simple_strtoul (argv[2], &ep, 16);
-	dev_desc = get_dev(argv[1],dev);
-
-	if (dev_desc == NULL) {
-		printf ("\n** Block device %s %d not supported\n", argv[1], dev);
-		return 1;
-	}
-
-	if (*ep) {
-		if (*ep != ':') {
-			puts ("\n** Invalid boot device, use `dev[:part]' **\n");
-			return 1;
-		}
-		part = (int)simple_strtoul(++ep, NULL, 16);
-	}
 
 	if (argc == 4) {
 	    filename = argv[3];
 	}
 
+	dev = dev_desc->dev;
 	PRINTF("Using device %s %d:%d, directory: %s\n", argv[1], dev, part, filename);
 
-	if ((part_length = reiserfs_set_blk_dev(dev_desc, part)) == 0) {
-		printf ("** Bad partition - %s %d:%d **\n",  argv[1], dev, part);
-		return 1;
-	}
+	reiserfs_set_blk_dev(dev_desc, &info);
 
-	if (!reiserfs_mount(part_length)) {
+	if (!reiserfs_mount(info.size)) {
 		printf ("** Bad Reiserfs partition or disk - %s %d:%d **\n",  argv[1], dev, part);
 		return 1;
 	}
@@ -110,15 +76,13 @@ U_BOOT_CMD(
 /******************************************************************************
  * Reiserfs boot command intepreter. Derived from diskboot
  */
-int do_reiserload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_reiserload (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	char *filename = NULL;
-	char *ep;
-	int dev, part = 0;
-	ulong addr = 0, part_length, filelen;
+	int dev, part;
+	ulong addr = 0, filelen;
 	disk_partition_t info;
 	block_dev_desc_t *dev_desc = NULL;
-	char buf [12];
 	unsigned long count;
 	char *addr_str;
 
@@ -150,8 +114,7 @@ int do_reiserload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		break;
 
 	default:
-		cmd_usage(cmdtp);
-		return 1;
+		return CMD_RET_USAGE;
 	}
 
 	if (!filename) {
@@ -159,56 +122,26 @@ int do_reiserload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		return 1;
 	}
 
-	dev = (int)simple_strtoul (argv[2], &ep, 16);
-	dev_desc = get_dev(argv[1],dev);
-	if (dev_desc==NULL) {
-		printf ("\n** Block device %s %d not supported\n", argv[1], dev);
+	part = get_device_and_partition(argv[1], argv[2], &dev_desc, &info, 1);
+	if (part < 0)
 		return 1;
-	}
-	if (*ep) {
-		if (*ep != ':') {
-			puts ("\n** Invalid boot device, use `dev[:part]' **\n");
-			return 1;
-		}
-		part = (int)simple_strtoul(++ep, NULL, 16);
-	}
 
-	PRINTF("Using device %s%d, partition %d\n", argv[1], dev, part);
+	dev = dev_desc->dev;
 
-	if (part != 0) {
-		if (get_partition_info (dev_desc, part, &info)) {
-			printf ("** Bad partition %d **\n", part);
-			return 1;
-		}
+	printf("Loading file \"%s\" from %s device %d%c%c\n",
+		filename, argv[1], dev,
+		part ? ':' : ' ', part ? part + '0' : ' ');
 
-		if (strncmp((char *)info.type, BOOT_PART_TYPE, sizeof(info.type)) != 0) {
-			printf ("\n** Invalid partition type \"%.32s\""
-				" (expect \"" BOOT_PART_TYPE "\")\n",
-				info.type);
-			return 1;
-		}
-		PRINTF ("\nLoading from block device %s device %d, partition %d: "
-			"Name: %.32s  Type: %.32s  File:%s\n",
-			argv[1], dev, part, info.name, info.type, filename);
-	} else {
-		PRINTF ("\nLoading from block device %s device %d, File:%s\n",
-			argv[1], dev, filename);
-	}
+	reiserfs_set_blk_dev(dev_desc, &info);
 
-
-	if ((part_length = reiserfs_set_blk_dev(dev_desc, part)) == 0) {
-		printf ("** Bad partition - %s %d:%d **\n",  argv[1], dev, part);
-		return 1;
-	}
-
-	if (!reiserfs_mount(part_length)) {
+	if (!reiserfs_mount(info.size)) {
 		printf ("** Bad Reiserfs partition or disk - %s %d:%d **\n",  argv[1], dev, part);
 		return 1;
 	}
 
 	filelen = reiserfs_open(filename);
 	if (filelen < 0) {
-		printf("** File not found %s\n", filename);
+		printf("** File not found %s **\n", filename);
 		return 1;
 	}
 	if ((count < filelen) && (count != 0)) {
@@ -224,8 +157,7 @@ int do_reiserload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	load_addr = addr;
 
 	printf ("\n%ld bytes read\n", filelen);
-	sprintf(buf, "%lX", filelen);
-	setenv("filesize", buf);
+	setenv_hex("filesize", filelen);
 
 	return filelen;
 }

@@ -2,24 +2,7 @@
  * (C) Copyright 2003-2005
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- *
+ * SPDX-License-Identifier:	GPL-2.0+
  ********************************************************************
  *
  * Lots of code copied from:
@@ -225,11 +208,7 @@ static u_int cirrus_set_opts (socket_info_t * s)
 {
 	cirrus_state_t *p = &s->c_state;
 	u_int mask = 0xffff;
-#if DEBUG
-	char buf[200];
-
-	memset (buf, 0, 200);
-#endif
+	char buf[200] = {0};
 
 	if (has_ring == -1)
 		has_ring = 1;
@@ -639,7 +618,7 @@ static int i365_set_io_map (socket_info_t * s, struct pccard_io_map *io)
 #define	HOST_TO_PCI(addr)	((addr) - 0xfe000000)
 #define	PCI_TO_HOST(addr)	((addr) + 0xfe000000)
 
-int i82365_init (void)
+static int i82365_init (void)
 {
 	u_int val;
 	int i;
@@ -719,7 +698,7 @@ int i82365_init (void)
 	return 0;
 }
 
-void i82365_exit (void)
+static void i82365_exit (void)
 {
 	io.map = 0;
 	io.flags = 0;

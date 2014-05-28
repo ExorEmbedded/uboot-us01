@@ -2,22 +2,7 @@
  * (C) Copyright 2003
  * Martin Winistoerfer, martinwinistoerfer@gmx.ch.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation,
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -37,6 +22,8 @@
 
 #define CONFIG_MPC555		1		/* This is an MPC555 CPU		*/
 #define CONFIG_CMI		1		/* Using the customized cmi board	*/
+
+#define	CONFIG_SYS_TEXT_BASE	0x02000000	/* Boot from flash at location 0x00000000 */
 
 /* Serial Console Configuration */
 #define	CONFIG_5xx_CONS_SCI1
@@ -60,6 +47,7 @@
 #include <config_cmd_default.h>
 
 #undef	CONFIG_CMD_NET		/* disabeled - causes compile errors */
+#undef	CONFIG_CMD_NFS
 
 #define CONFIG_CMD_MEMORY
 #define CONFIG_CMD_LOADB
@@ -94,7 +82,6 @@
  */
 
 #define	CONFIG_SYS_LONGHELP				/* undef to save memory		*/
-#define	CONFIG_SYS_PROMPT		"=> "		/* Monitor Command Prompt	*/
 #if defined(CONFIG_CMD_KGDB)
 #define	CONFIG_SYS_CBSIZE		1024		/* Console I/O Buffer Size	*/
 #else
@@ -108,8 +95,6 @@
 #define CONFIG_SYS_MEMTEST_END		0x000fa000	/* 1 MB in SRAM			*/
 
 #define	CONFIG_SYS_LOAD_ADDR		0x100000	/* default load address		*/
-
-#define	CONFIG_SYS_HZ			1000		/* Decrementer freq: 1 ms ticks	*/
 
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200, 1250000 }
 
@@ -127,9 +112,8 @@
  * Definitions for initial stack pointer and data area
  */
 #define CONFIG_SYS_INIT_RAM_ADDR	(CONFIG_SYS_IMMR + 0x003f9800)	/* Physical start adress of internal MPC555 writable RAM */
-#define	CONFIG_SYS_INIT_RAM_END	(CONFIG_SYS_IMMR + 0x003fffff)	/* Physical end adress of internal MPC555 used RAM area	*/
-#define	CONFIG_SYS_GBL_DATA_SIZE	64			/* Size in bytes reserved for initial global data */
-#define CONFIG_SYS_GBL_DATA_OFFSET	((CONFIG_SYS_INIT_RAM_END - CONFIG_SYS_INIT_RAM_ADDR) - CONFIG_SYS_GBL_DATA_SIZE) /* Offset from the beginning of ram */
+#define	CONFIG_SYS_INIT_RAM_SIZE	(CONFIG_SYS_IMMR + 0x003fffff)	/* Physical end adress of internal MPC555 used RAM area	*/
+#define CONFIG_SYS_GBL_DATA_OFFSET	((CONFIG_SYS_INIT_RAM_SIZE - CONFIG_SYS_INIT_RAM_ADDR) - GENERATED_GBL_DATA_SIZE) /* Offset from the beginning of ram */
 #define	CONFIG_SYS_INIT_SP_ADDR	0x013fa000		/* Physical start adress of inital stack */
 
 /*
@@ -142,7 +126,7 @@
 #define ANYBUS_BASE		0x03010000	/* Anybus Module */
 
 #define CONFIG_SYS_RESET_ADRESS	0x01000000	/* Adress which causes reset */
-#define	CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_FLASH_BASE	/* TEXT_BASE is defined in the board config.mk file.	*/
+#define	CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_FLASH_BASE	/* CONFIG_SYS_TEXT_BASE is defined in the board config.mk file.	*/
 						/* This adress is given to the linker with -Ttext to	*/
 						/* locate the text section at this adress.		*/
 #define	CONFIG_SYS_MONITOR_LEN		(192 << 10)	/* Reserve 192 kB for Monitor				*/
@@ -266,14 +250,5 @@
  * Initialise to zero
  */
 #define CONFIG_SYS_DER			0x00000000
-
-
-/*
- * Internal Definitions
- *
- * Boot Flags
- */
-#define	BOOTFLAG_COLD	0x01			/* Normal Power-On: Boot from FLASH	*/
-#define BOOTFLAG_WARM	0x02			/* Software reboot			*/
 
 #endif	/* __CONFIG_H */

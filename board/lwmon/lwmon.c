@@ -7,29 +7,12 @@ M* Content:       LWMON specific U-Boot commands.
  * (C) Copyright 2001, 2002
  * DENX Software Engineering
  * Wolfgang Denk, wd@denx.de
- * All rights reserved.
  *
 D* Design:        wd@denx.de
 C* Coding:        wd@denx.de
 V* Verification:  dzu@denx.de
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  ***********************************************************************/
 
 /*---------------------------- Headerfiles ----------------------------*/
@@ -366,7 +349,7 @@ int board_early_init_f (void)
 	 *
 	 * This is just a preliminary fix, intended to turn off TENA
 	 * as soon as possible to avoid noise on the network. Once
-	 * I²C is running we will make sure the interface is
+	 * I2C is running we will make sure the interface is
 	 * correctly initialized.
 	 */
 	immr->im_cpm.cp_pbpar &= ~PB_ENET_TENA;
@@ -481,9 +464,9 @@ static void kbd_init (void)
 	uchar val, errcd;
 	int i;
 
-	i2c_init (CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
+	i2c_set_bus_num(0);
 
-	gd->kbd_status = 0;
+	gd->arch.kbd_status = 0;
 
 	/* Forced by PIC. Delays <= 175us loose */
 	udelay(1000);
@@ -497,7 +480,7 @@ static void kbd_init (void)
 	/* clear "irrelevant" bits. Recommended by Martin Rajek, LWN */
 	errcd &= ~(KEYBD_STATUS_H_RESET|KEYBD_STATUS_BROWNOUT);
 	if (errcd) {
-		gd->kbd_status |= errcd << 8;
+		gd->arch.kbd_status |= errcd << 8;
 	}
 	/* Reset error code and verify */
 	val = KEYBD_CMD_RESET_ERRORS;
@@ -510,7 +493,7 @@ static void kbd_init (void)
 
 	val &= KEYBD_STATUS_MASK;	/* clear unused bits */
 	if (val) {			/* permanent error, report it */
-		gd->kbd_status |= val;
+		gd->arch.kbd_status |= val;
 		return;
 	}
 
@@ -569,8 +552,8 @@ int misc_init_r (void)
 {
 	uchar kbd_data[KEYBD_DATALEN];
 	char keybd_env[2 * KEYBD_DATALEN + 1];
-	uchar kbd_init_status = gd->kbd_status >> 8;
-	uchar kbd_status = gd->kbd_status;
+	uchar kbd_init_status = gd->arch.kbd_status >> 8;
+	uchar kbd_status = gd->arch.kbd_status;
 	uchar val;
 	char *str;
 	int i;
@@ -792,7 +775,7 @@ void lcd_show_board_info(void)
 #if defined(CONFIG_CMD_BSP)
 /***********************************************************************
 F* Function:     int do_pic (cmd_tbl_t *cmdtp, int flag,
-F*                           int argc, char *argv[]) P*A*Z*
+F*                           int argc, char * const argv[]) P*A*Z*
  *
 P* Parameters:   cmd_tbl_t *cmdtp
 P*                - Pointer to our command table entry
@@ -801,7 +784,7 @@ P*                - If the CMD_FLAG_REPEAT bit is set, then this call is
 P*                  a repetition
 P*               int argc
 P*                - Argument count
-P*               char *argv[]
+P*               char * const argv[]
 P*                - Array of the actual arguments
 P*
 P* Returnvalue:  int
@@ -817,7 +800,7 @@ D* Design:       wd@denx.de
 C* Coding:       wd@denx.de
 V* Verification: dzu@denx.de
  ***********************************************************************/
-int do_pic (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_pic (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	uchar reg, val;
 
@@ -846,8 +829,7 @@ int do_pic (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	default:
 		break;
 	}
-	cmd_usage(cmdtp);
-	return 1;
+	return cmd_usage(cmdtp);
 }
 U_BOOT_CMD(
 	pic,	4,	1,	do_pic,
@@ -858,7 +840,7 @@ U_BOOT_CMD(
 
 /***********************************************************************
 F* Function:     int do_kbd (cmd_tbl_t *cmdtp, int flag,
-F*                           int argc, char *argv[]) P*A*Z*
+F*                           int argc, char * const argv[]) P*A*Z*
  *
 P* Parameters:   cmd_tbl_t *cmdtp
 P*                - Pointer to our command table entry
@@ -867,7 +849,7 @@ P*                - If the CMD_FLAG_REPEAT bit is set, then this call is
 P*                  a repetition
 P*               int argc
 P*                - Argument count
-P*               char *argv[]
+P*               char * const argv[]
 P*                - Array of the actual arguments
 P*
 P* Returnvalue:  int
@@ -882,7 +864,7 @@ D* Design:       wd@denx.de
 C* Coding:       wd@denx.de
 V* Verification: dzu@denx.de
  ***********************************************************************/
-int do_kbd (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_kbd (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	uchar kbd_data[KEYBD_DATALEN];
 	char keybd_env[2 * KEYBD_DATALEN + 1];
@@ -919,7 +901,7 @@ U_BOOT_CMD(
 
 /***********************************************************************
 F* Function:     int do_lsb (cmd_tbl_t *cmdtp, int flag,
-F*                           int argc, char *argv[]) P*A*Z*
+F*                           int argc, char * const argv[]) P*A*Z*
  *
 P* Parameters:   cmd_tbl_t *cmdtp
 P*                - Pointer to our command table entry
@@ -928,7 +910,7 @@ P*                - If the CMD_FLAG_REPEAT bit is set, then this call is
 P*                  a repetition
 P*               int argc
 P*                - Argument count
-P*               char *argv[]
+P*               char * const argv[]
 P*                - Array of the actual arguments
 P*
 P* Returnvalue:  int
@@ -945,7 +927,7 @@ D* Design:       wd@denx.de
 C* Coding:       wd@denx.de
 V* Verification: dzu@denx.de
  ***********************************************************************/
-int do_lsb (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_lsb (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	uchar val;
 	immap_t *immr = (immap_t *) CONFIG_SYS_IMMR;
@@ -976,8 +958,7 @@ int do_lsb (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	default:
 		break;
 	}
-	cmd_usage(cmdtp);
-	return 1;
+	return cmd_usage(cmdtp);
 }
 
 U_BOOT_CMD(

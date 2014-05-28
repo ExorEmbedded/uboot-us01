@@ -12,27 +12,13 @@
  *
  * Configuation settings for the WindRiver PPMC8260 board.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
+
+#define	CONFIG_SYS_TEXT_BASE	0xfe000000
 
 /*****************************************************************************
  *
@@ -76,7 +62,7 @@
 #define CONFIG_SYS_PPMC_BOOT_LOW 1
 
 /* What should the base address of the main FLASH be and how big is
- * it (in MBytes)? This must contain TEXT_BASE from board/ppmc8260/config.mk
+ * it (in MBytes)? This must contain CONFIG_SYS_TEXT_BASE from board/ppmc8260/config.mk
  * The main FLASH is whichever is connected to *CS0. U-Boot expects
  * this to be the SIMM.
  */
@@ -182,6 +168,10 @@
  * Port pins used for bit-banged MII communictions (if applicable).
  */
 #define MDIO_PORT	2	/* Port C */
+#define MDIO_DECLARE	volatile ioport_t *iop = ioport_addr ( \
+				(immap_t *) CONFIG_SYS_IMMR, MDIO_PORT )
+#define MDC_DECLARE	MDIO_DECLARE
+
 #define MDIO_ACTIVE	(iop->pdir |=  0x00400000)
 #define MDIO_TRISTATE	(iop->pdir &= ~0x00400000)
 #define MDIO_READ	((iop->pdat &  0x00400000) != 0)
@@ -277,7 +267,6 @@
 #define CONFIG_SYS_LONGHELP
 
 /* Monitor Command Prompt */
-#define CONFIG_SYS_PROMPT		"=> "
 
 
 /*
@@ -304,7 +293,6 @@
  *
  *****************************************************************************/
 
-#define CONFIG_MPC8260		1	/* This is an MPC8260 CPU   */
 #define CONFIG_PPMC8260		1	/* on an Wind River PPMC8260 Board  */
 #define CONFIG_CPM2		1	/* Has a CPM2 */
 
@@ -325,7 +313,6 @@
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE /* Boot Argument Buffer Size	   */
 
 #define CONFIG_SYS_LOAD_ADDR		0x140000   /* default load address */
-#define CONFIG_SYS_HZ			1000	/* decrementer freq: 1 ms ticks */
 
 #define CONFIG_SYS_MEMTEST_START	0x2000	/* memtest works from the end of */
 					/* the exception vector table */
@@ -339,9 +326,6 @@
 
 #define CONFIG_SYS_MEMTEST_END		( CONFIG_SYS_SDRAM_SIZE * 1024 * 1024 \
 				- CONFIG_SYS_MEM_END_USAGE )
-
-/* valid baudrates */
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 /*
  * Low Level Configuration Settings
@@ -366,8 +350,8 @@
  * - Select bus for bd/buffers (see 28-13)
  * - Enable Full Duplex in FSMR
  */
-#define CONFIG_SYS_CMXFCR_MASK		(CMXFCR_FC2|CMXFCR_RF2CS_MSK|CMXFCR_TF2CS_MSK)
-#define CONFIG_SYS_CMXFCR_VALUE	(CMXFCR_RF2CS_CLK13|CMXFCR_TF2CS_CLK14)
+#define CONFIG_SYS_CMXFCR_MASK2		(CMXFCR_FC2|CMXFCR_RF2CS_MSK|CMXFCR_TF2CS_MSK)
+#define CONFIG_SYS_CMXFCR_VALUE2	(CMXFCR_RF2CS_CLK13|CMXFCR_TF2CS_CLK14)
 #define CONFIG_SYS_CPMFCR_RAMTYPE	0
 #define CONFIG_SYS_FCC_PSMR		(FCC_PSMR_FDE | FCC_PSMR_LPB)
 #endif	/* CONFIG_ETHER_INDEX */
@@ -416,9 +400,8 @@
  * Definitions for initial stack pointer and data area (in DPRAM)
  */
 #define CONFIG_SYS_INIT_RAM_ADDR	CONFIG_SYS_IMMR
-#define CONFIG_SYS_INIT_RAM_END	0x4000	/* End of used area in DPRAM	*/
-#define CONFIG_SYS_GBL_DATA_SIZE	128	/* bytes reserved for initial data */
-#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_END - CONFIG_SYS_GBL_DATA_SIZE)
+#define CONFIG_SYS_INIT_RAM_SIZE	0x4000	/* Size of used area in DPRAM	*/
+#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_INIT_SP_OFFSET	CONFIG_SYS_GBL_DATA_OFFSET
 
 /*-----------------------------------------------------------------------
@@ -1000,13 +983,4 @@
 			 ORxG_TRLX		       |\
 			 ORxG_EHTR)
 #endif /* CONFIG_SYS_LED_BASE */
-
-/*
- * Internal Definitions
- *
- * Boot Flags
- */
-#define BOOTFLAG_COLD	0x01	/* Normal Power-On: Boot from FLASH  */
-#define BOOTFLAG_WARM	0x02	/* Software reboot		     */
-
 #endif	/* __CONFIG_H */

@@ -2,23 +2,7 @@
  * (C) Copyright 2001
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /* ------------------------------------------------------------------------- */
@@ -35,10 +19,11 @@
  * (easy to change)
  */
 
-#define CONFIG_MPC824X		1
 /* #define CONFIG_MPC8240	   1 */
 #define CONFIG_MPC8245		1
 #define CONFIG_EXALION		1
+
+#define	CONFIG_SYS_TEXT_BASE	0xFFF00000
 
 #if defined (CONFIG_MPC8240)
     /* #warning	 ---------- eXalion with MPC8240 --------------- */
@@ -85,15 +70,11 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		1	/* undef to save memory		*/
-#define CONFIG_SYS_PROMPT		"=> "	/* Monitor Command Prompt	*/
 #define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size	*/
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)	/* Print Buffer Size	*/
 #define CONFIG_SYS_MAXARGS		8	/* max number of command args	*/
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE	/* Boot Argument Buffer Size	*/
 #define CONFIG_SYS_LOAD_ADDR		0x00100000	/* default load address		*/
-
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
-
 #define CONFIG_MISC_INIT_R	1
 
 /*-----------------------------------------------------------------------
@@ -109,7 +90,7 @@
 
 #undef	CONFIG_SYS_RAMBOOT
 #define CONFIG_SYS_MONITOR_LEN		(256 << 10)	/* Reserve 256 kB for Monitor	    */
-#define CONFIG_SYS_MONITOR_BASE	TEXT_BASE
+#define CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_TEXT_BASE
 
 /*-----------------------------------------------------------------------
  * Definitions for initial stack pointer and data area
@@ -117,11 +98,10 @@
 #define CONFIG_SYS_INIT_DATA_SIZE	128
 
 #define CONFIG_SYS_INIT_RAM_ADDR	0x40000000
-#define CONFIG_SYS_INIT_RAM_END	0x1000
-#define CONFIG_SYS_INIT_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_END - CONFIG_SYS_INIT_DATA_SIZE)
+#define CONFIG_SYS_INIT_RAM_SIZE	0x1000
+#define CONFIG_SYS_INIT_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_SIZE - CONFIG_SYS_INIT_DATA_SIZE)
 
-#define CONFIG_SYS_GBL_DATA_SIZE	 256	/* size in bytes reserved for initial data */
-#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_END - CONFIG_SYS_GBL_DATA_SIZE)
+#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_INIT_SP_OFFSET	CONFIG_SYS_GBL_DATA_OFFSET
 
 
@@ -137,7 +117,7 @@
 
 #define CONFIG_ENV_IS_IN_FLASH	1
 #define CONFIG_ENV_SECT_SIZE	0x20000 /* Size of one Flash sector */
-#define CONFIG_ENV_SIZE		CONFIG_ENV_SECT_SIZE	/* Use one Flash sector for enviroment	*/
+#define CONFIG_ENV_SIZE		CONFIG_ENV_SECT_SIZE	/* Use one Flash sector for environment	*/
 #define CONFIG_ENV_ADDR		0xFFFC0000
 #define CONFIG_ENV_OFFSET		0	/* starting right at the beginning  */
 
@@ -182,9 +162,9 @@
  * PCI stuff
  */
 #define CONFIG_PCI		1	/* include pci support		*/
+#define CONFIG_PCI_INDIRECT_BRIDGE 1	/* indirect PCI bridge support */
 #undef	CONFIG_PCI_PNP
 
-#define CONFIG_NET_MULTI	1	/* Multi ethernet cards support */
 
 #define CONFIG_EEPRO100		1
 
@@ -226,7 +206,7 @@
  * configuration items that the driver uses to drive the port pins.
  */
 #define CONFIG_HARD_I2C		1	/* To enable I2C support	*/
-#undef	CONFIG_SOFT_I2C		/* I2C bit-banged		*/
+#undef	CONFIG_SYS_I2C_SOFT		/* I2C bit-banged		*/
 #define CONFIG_SYS_I2C_SPEED		400000	/* I2C speed and slave address	*/
 #define CONFIG_SYS_I2C_SLAVE		0x7F
 
@@ -235,7 +215,6 @@
  * (address mappings, register initial values, etc.)
  * You should know what you are doing if you make changes here.
  */
-#define CONFIG_SYS_HZ			1000
 
 #define CONFIG_SYS_CLK_FREQ	33333333	/* external frequency to pll	*/
 #define CONFIG_PLL_PCI_TO_MEM_MULTIPLIER  2	/* for MPC8240 only		*/
@@ -411,16 +390,6 @@
 #if defined(CONFIG_CMD_KGDB)
 #  define CONFIG_SYS_CACHELINE_SHIFT	5	/* log base 2 of the above value */
 #endif
-
-
-/*-----------------------------------------------------------------------
- * Internal Definitions
- *
- * Boot Flags
- */
-#define BOOTFLAG_COLD		0x01	/* Normal Power-On: Boot from FLASH	*/
-#define BOOTFLAG_WARM		0x02	/* Software reboot			*/
-
 
 /* values according to the manual */
 #define CONFIG_DRAM_50MHZ	1

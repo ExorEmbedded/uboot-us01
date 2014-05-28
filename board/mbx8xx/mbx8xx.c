@@ -12,23 +12,7 @@
  * - ethernet io initialisation
  *
  * -----------------------------------------------------------------
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -117,14 +101,16 @@ static const uint sdram_table_50[] = {
 
 /* ------------------------------------------------------------------------- */
 
+#ifdef CONFIG_SYS_USE_OSCCLK
 static unsigned int get_reffreq(void);
+#endif
 static unsigned int board_get_cpufreq(void);
 
 void mbx_init (void)
 {
 	volatile immap_t *immr = (immap_t *) CONFIG_SYS_IMMR;
 	volatile memctl8xx_t *memctl = &immr->im_memctl;
-	ulong speed, refclock, plprcr, sccr;
+	ulong speed, plprcr, sccr;
 	ulong br0_32 = memctl->memc_br0 & 0x400;
 
 	/* real-time clock status and control register */
@@ -152,7 +138,6 @@ void mbx_init (void)
 	immr->im_clkrst.car_sccr = sccr;
 
 	speed = board_get_cpufreq ();
-	refclock = get_reffreq ();
 
 #if ((CONFIG_SYS_PLPRCR & PLPRCR_MF_MSK) != 0)
 	plprcr = CONFIG_SYS_PLPRCR;
@@ -163,7 +148,7 @@ void mbx_init (void)
 #endif
 
 #ifdef CONFIG_SYS_USE_OSCCLK			/* See doc/README.MBX ! */
-	plprcr |= ((speed + refclock / 2) / refclock - 1) << 20;
+	plprcr |= ((speed + get_reffreq() / 2) / refclock - 1) << 20;
 #endif
 
 	immr->im_clkrstk.cark_plprcrk = KAPWR_KEY;
@@ -226,21 +211,27 @@ static unsigned int board_get_cpufreq (void)
 {
 #ifndef CONFIG_8xx_GCLK_FREQ
 	vpd_packet_t *packet;
+	ulong *p;
 
 	packet = vpd_find_packet (VPD_PID_ICS);
-	return *((ulong *) packet->data);
+	p = (ulong *)packet->data;
+	return *p;
 #else
 	return((unsigned int)CONFIG_8xx_GCLK_FREQ );
 #endif /* CONFIG_8xx_GCLK_FREQ */
 }
 
+#ifdef CONFIG_SYS_USE_OSCCLK
 static unsigned int get_reffreq (void)
 {
 	vpd_packet_t *packet;
+	ulong *p;
 
 	packet = vpd_find_packet (VPD_PID_RCS);
-	return *((ulong *) packet->data);
+	p = (ulong *)packet->data;
+	return *p;
 }
+#endif
 
 static void board_get_enetaddr(uchar *addr)
 {

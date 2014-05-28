@@ -2,23 +2,7 @@
  * (C) Copyright 2003-2007
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef __CONFIG_H
@@ -27,9 +11,10 @@
 /*
  * High Level Configuration Options
  */
-#define CONFIG_MPC5xxx		1	/* This is an MPC5xxx CPU */
-#define CONFIG_MPC5200		1	/* (more precisely an MPC5200 CPU) */
+#define CONFIG_MPC5200		1	/* This is an MPC5200 CPU */
 #define CONFIG_CM5200		1	/* ... on CM5200 platform */
+
+#define	CONFIG_SYS_TEXT_BASE	0xfc000000
 
 #define CONFIG_HIGH_BATS	1	/* High BATs supported */
 
@@ -78,7 +63,9 @@
 #define CONFIG_POST		(CONFIG_SYS_POST_MEMORY | CONFIG_SYS_POST_CPU | CONFIG_SYS_POST_I2C)
 #define MPC5XXX_SRAM_POST_SIZE	(MPC5XXX_SRAM_SIZE - 4)
 /* List of I2C addresses to be verified by POST */
-#define I2C_ADDR_LIST		{ CONFIG_SYS_I2C_SLAVE, CONFIG_SYS_I2C_IO, CONFIG_SYS_I2C_EEPROM }
+#define CONFIG_SYS_POST_I2C_ADDRS	{CONFIG_SYS_I2C_SLAVE,	\
+					 CONFIG_SYS_I2C_IO,	\
+					 CONFIG_SYS_I2C_EEPROM}
 
 /* display image timestamps */
 #define CONFIG_TIMESTAMP	1
@@ -158,18 +145,17 @@
 #define CONFIG_SYS_INIT_RAM_ADDR	MPC5XXX_SRAM
 #ifdef CONFIG_POST
 /* preserve space for the post_word at end of on-chip SRAM */
-#define CONFIG_SYS_INIT_RAM_END	MPC5XXX_SRAM_POST_SIZE
+#define CONFIG_SYS_INIT_RAM_SIZE	MPC5XXX_SRAM_POST_SIZE
 #else
-#define CONFIG_SYS_INIT_RAM_END	MPC5XXX_SRAM_SIZE
+#define CONFIG_SYS_INIT_RAM_SIZE	MPC5XXX_SRAM_SIZE
 #endif
 
-#define CONFIG_SYS_GBL_DATA_SIZE	128	/* size in bytes for initial data */
-#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_END - CONFIG_SYS_GBL_DATA_SIZE)
+#define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_BOARD_TYPES	1	/* we use board_type */
 
 #define CONFIG_SYS_INIT_SP_OFFSET	CONFIG_SYS_GBL_DATA_OFFSET
 
-#define CONFIG_SYS_MONITOR_BASE	TEXT_BASE
+#define CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_TEXT_BASE
 #define CONFIG_SYS_MONITOR_LEN		(384 << 10)	/* 384 kB for Monitor */
 #define CONFIG_SYS_MALLOC_LEN		(256 << 10)	/* 256 kB for malloc() */
 #define CONFIG_SYS_BOOTMAPSZ		(8 << 20)	/* initial mem map for Linux */
@@ -296,7 +282,6 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		1	/* undef to save memory */
-#define CONFIG_SYS_PROMPT		"=> "	/* Monitor Command Prompt */
 #define CONFIG_SYS_CBSIZE		1024	/* Console I/O Buffer Size */
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16) /* Print Buffer Size */
 #define CONFIG_SYS_MAXARGS		16	/* max number of command args */
@@ -309,16 +294,12 @@
 #define CONFIG_LOOPW		1
 
 #define CONFIG_SYS_LOAD_ADDR		0x100000	/* default load address */
-#define CONFIG_SYS_HZ			1000	/* decrementer freq: 1 ms ticks */
 
 /*
  * Various low-level settings
  */
 #define CONFIG_SYS_HID0_INIT		HID0_ICE | HID0_ICFI
 #define CONFIG_SYS_HID0_FINAL		HID0_ICE
-
-#define BOOTFLAG_COLD		0x01	/* Normal Power-On: Boot from FLASH */
-#define BOOTFLAG_WARM		0x02	/* Software reboot */
 
 #define CONFIG_SYS_XLB_PIPELINING	1	/* enable transaction pipeling */
 

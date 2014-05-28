@@ -1,23 +1,7 @@
 /*
  * Copyright (C) 2006-2009 Freescale Semiconductor, Inc.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -87,7 +71,7 @@ void pci_init_board(void)
 #endif
 	u8 reg8;
 
-#ifdef CONFIG_HARD_I2C
+#if defined(CONFIG_SYS_I2C)
 	i2c_set_bus_num(1);
 	/* Read the PCI_M66EN jumper setting */
 	if ((i2c_read(CONFIG_SYS_I2C_8574_ADDR2, 0, 0, &reg8, sizeof(reg8)) == 0) ||
@@ -114,8 +98,8 @@ void pci_init_board(void)
 	udelay(2000);
 
 #ifndef CONFIG_MPC83XX_PCI2
-	mpc83xx_pci_init(1, reg, 0);
+	mpc83xx_pci_init(1, reg);
 #else
-	mpc83xx_pci_init(2, reg, 0);
+	mpc83xx_pci_init(2, reg);
 #endif
 }

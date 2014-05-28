@@ -5,23 +5,7 @@
  * Alex Bounine , Tundra Semiconductor Corp.
  * Roy Zang	, <tie-fei.zang@freescale.com> Freescale Corp.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -42,15 +26,21 @@
 #define CONFIG_HIGH_BATS	/* High BATs supported */
 #define CONFIG_ALTIVEC		/* undef to disable */
 
+#define	CONFIG_SYS_TEXT_BASE	0xFF000000
+
 #define CONFIG_SYS_BOARD_NAME		"MPC7448 HPC II"
 #define CONFIG_IDENT_STRING	" Freescale MPC7448 HPC II"
 
 #define CONFIG_SYS_OCN_CLK		133000000	/* 133 MHz */
-#define CONFIG_SYS_CONFIG_BUS_CLK	133000000
+#define CONFIG_SYS_BUS_CLK		133000000
 
 #define CONFIG_SYS_CLK_SPREAD		/* Enable Spread-Spectrum Clock generation */
 
 #undef  CONFIG_ECC		/* disable ECC support */
+
+#ifndef __ASSEMBLY__
+#include <galileo/core.h>
+#endif
 
 /* Board-specific Initialization Functions to be called */
 #define CONFIG_SYS_BOARD_ASM_INIT
@@ -73,13 +63,11 @@
 /*#define CONFIG_SYS_HUSH_PARSER */
 #undef CONFIG_SYS_HUSH_PARSER
 
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
 /* Pass open firmware flat tree */
 #define CONFIG_OF_LIBFDT	1
 #define CONFIG_OF_BOARD_SETUP	1
 
-#define OF_CPU			"PowerPC,7448@0"
 #define OF_TSI			"tsi108@c0000000"
 #define OF_TBCLK		(bd->bi_busfreq / 8)
 #define OF_STDOUT_PATH		"/tsi108@c0000000/serial@7808"
@@ -102,7 +90,6 @@
 
 #define CONFIG_SYS_NS16550_COM1	(CONFIG_SYS_TSI108_CSR_RST_BASE+0x7808)
 #define CONFIG_SYS_NS16550_COM2	(CONFIG_SYS_TSI108_CSR_RST_BASE+0x7C08)
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 #define CONFIG_BOOTDELAY	3	/* autoboot after 3 seconds */
 #define CONFIG_ZERO_BOOTDELAY_CHECK
@@ -127,9 +114,8 @@
 #define CONFIG_TSI108_ETH
 #define CONFIG_TSI108_ETH_NUM_PORTS	2
 
-#define CONFIG_NET_MULTI
 
-#define CONFIG_BOOTFILE		zImage.initrd.elf
+#define CONFIG_BOOTFILE		"zImage.initrd.elf"
 #define CONFIG_LOADADDR		0x400000
 
 /*-------------------------------------------------------------------------- */
@@ -183,7 +169,6 @@
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN		1	/* Bytes of address */
 
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
-#define CONFIG_SYS_PROMPT	"=> "	/* Monitor Command Prompt */
 
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_SYS_CBSIZE		1024	/* Console I/O Buffer Size */
@@ -200,8 +185,6 @@
 #define CONFIG_SYS_MEMTEST_END		0x07c00000	/* 4 ... 124 MB in DRAM */
 
 #define CONFIG_SYS_LOAD_ADDR	0x00400000	/* default load address */
-
-#define CONFIG_SYS_HZ		1000		/* decr freq: 1ms ticks */
 
 /*
  * Low Level Configuration Settings
@@ -220,10 +203,9 @@
  */
 #undef  CONFIG_SYS_INIT_RAM_LOCK
 #define CONFIG_SYS_INIT_RAM_ADDR	0x07d00000	/* unused memory region */
-#define CONFIG_SYS_INIT_RAM_END	0x4000/* larger space - we have SDRAM initialized */
+#define CONFIG_SYS_INIT_RAM_SIZE	0x4000/* larger space - we have SDRAM initialized */
 
-#define CONFIG_SYS_GBL_DATA_SIZE	128/* size in bytes reserved for init data */
-#define CONFIG_SYS_GBL_DATA_OFFSET (CONFIG_SYS_INIT_RAM_END - CONFIG_SYS_GBL_DATA_SIZE)
+#define CONFIG_SYS_GBL_DATA_OFFSET (CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 
 /*-----------------------------------------------------------------------
  * Start addresses for the final memory configuration
@@ -252,7 +234,7 @@
 
 #define CONFIG_SYS_RESET_ADDRESS	0x3fffff00
 #define CONFIG_SYS_MONITOR_LEN		(256 << 10)	/* Reserve 256 kB for Monitor */
-#define CONFIG_SYS_MONITOR_BASE	TEXT_BASE	/* u-boot code base */
+#define CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_TEXT_BASE	/* u-boot code base */
 #define CONFIG_SYS_MALLOC_LEN		(256 << 10)	/* Reserve 256 kB for malloc */
 
 /* Peripheral Device section */
@@ -400,13 +382,5 @@
 
 #define L2_INIT		0
 #define L2_ENABLE	(L2_INIT | L2CR_L2E)
-
-/*
- * Internal Definitions
- *
- * Boot Flags
- */
-#define BOOTFLAG_COLD	0x01	/* Normal Power-On: Boot from FLASH */
-#define BOOTFLAG_WARM	0x02	/* Software reboot */
 #define CONFIG_SYS_SERIAL_HANG_IN_EXCEPTION
 #endif	/* __CONFIG_H */
