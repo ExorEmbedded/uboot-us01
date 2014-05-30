@@ -15,6 +15,12 @@
 
 #ifndef _BOARD_H_
 #define _BOARD_H_
+
+#define ETOP507_VAL  104
+#define ETOP507G_VAL 105
+#define ECO_VAL      110
+#define PLCM07_VAL   111
+
 void enable_uart0_pin_mux(void);
 void enable_uart1_pin_mux(void);
 void enable_i2c0_pin_mux(void);

@@ -45,7 +45,12 @@ static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
  */
 static int read_eeprom(void)
 {
-  //!!! TODO: Add reading of I2C SEEPROM here.
+#if (defined(CONFIG_CMD_I2CHWCFG))  
+  extern int i2cgethwcfg (void);
+  printf("read_eeprom() : i2cgethwcfg \n");
+  i2cgethwcfg();
+  printf("read_eeprom() : i2cgethwcfg called\n");
+  #endif
   return 0;
 }
 
@@ -200,9 +205,6 @@ int board_init(void)
   hw_watchdog_init();
 #endif
   gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
-  
-  //TODO: Read the I2C SEEPROM and fill-in the related environment variables accordingly 
-
   printf("board_init--\n");
   return 0;
 }
@@ -210,6 +212,32 @@ int board_init(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
+  /* Get the system configuration from the I2C SEEPROM */
+  read_eeprom();
+  
+  /* Set the "board_name" env. variable according with the "hw_code" */
+  char* tmp;
+  unsigned long hwcode;
+  
+  tmp = getenv("hw_code");
+  if(!tmp)
+  {
+    puts ("WARNING: 'hw_code' environment var not found!\n");
+    return 1;
+  }
+  hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
+  
+  if((hwcode==ETOP507_VAL)||(hwcode==ETOP507G_VAL))
+    setenv("board_name", "usom_etop5xx"); 
+  else if(hwcode==ECO_VAL)
+    setenv("board_name", "usom_eco"); 
+  else if(hwcode==PLCM07_VAL)
+    setenv("board_name", "usom_plcm07"); 
+  else
+  {
+    puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
+    setenv("board_name", "usom_undefined");
+  }
   return 0;
 }
 #endif
@@ -268,8 +296,6 @@ static struct cpsw_platform_data cpsw_data = {
 #if (defined(CONFIG_DRIVER_TI_CPSW) && !defined(CONFIG_SPL_BUILD))
 int board_eth_init(bd_t *bis)
 {
-  //!!!TODO: Retrieve MAC address from I2C SEEPROM
-  
   int rv, n = 0;
   uint8_t mac_addr[6];
   uint32_t mac_hi, mac_lo;
@@ -308,7 +334,6 @@ int board_eth_init(bd_t *bis)
 
   writel(RMII_MODE_ENABLE|RMII_CHIPCKL_ENABLE, &cdev->miisel);	// RMII interface, RMII clock as input
   cpsw_slaves[0].phy_if = cpsw_slaves[1].phy_if = PHY_INTERFACE_MODE_RMII;
-  //!!!TODO: If etop5xx, cpsw_slaves[0].phy_addr=2
 
   rv = cpsw_register(&cpsw_data);
   if (rv < 0)

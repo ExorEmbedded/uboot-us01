@@ -218,4 +218,8 @@
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_SMSC
 
+/* Exor custom features */
+#define CONFIG_CMD_I2CHWCFG
+#define CONFIG_SYS_I2C_ADPADD 0x56
+
 #endif	/* ! __CONFIG_AM335X_EVM_H */
