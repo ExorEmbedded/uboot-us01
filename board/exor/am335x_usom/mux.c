@@ -115,30 +115,37 @@ static struct module_pin_mux rmii1_pin_mux[] = {
   {-1},
 };
 
+static struct module_pin_mux gpio_pin_mux[] = {
+  /*UART control pins */
+  {OFFSET(gpmc_ad5), MODE(7)}, /* RXEN0 gpio1_5 */
+  {OFFSET(gpmc_ad6), MODE(7)}, /* DXEN0 gpio1_6 */
+  {OFFSET(gpmc_ad7), MODE(7)}, /* MODE0 gpio1_7 */
+  /* Power enable control pins */
+  {OFFSET(gpmc_clk), MODE(7)}, /* EN_STDBY gpio2_1 */
+  {OFFSET(emu0), MODE(7)}, /* EN_3W3_SW gpio3_7 */
+  {-1},
+};
+
 void enable_uart0_pin_mux(void)
 {
-  printf("enable_uart0_pin_mux\n");
   configure_module_pin_mux(uart0_pin_mux);
 }
 
 void enable_uart1_pin_mux(void)
 {
-  printf("enable_uart1_pin_mux\n");
   configure_module_pin_mux(uart1_pin_mux);
 }
 
 void enable_i2c0_pin_mux(void)
 {
-	printf("enable_i2c0_pin_mux\n");
-	configure_module_pin_mux(i2c0_pin_mux);
+  configure_module_pin_mux(i2c0_pin_mux);
 }
+
 
 void enable_board_pin_mux(void)
 {
 	configure_module_pin_mux(rmii1_pin_mux);
 	configure_module_pin_mux(mmc0_pin_mux);
 	configure_module_pin_mux(mmc1_pin_mux);
-	
-	//TODO
-	//Add HW specific pinmux configurations here
+	configure_module_pin_mux(gpio_pin_mux);
 }

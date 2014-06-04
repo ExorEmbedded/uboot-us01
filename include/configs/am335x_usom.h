@@ -56,9 +56,7 @@
 	"bootfile=zImage\0" \
 	"fdtfile=usom_undefined.dtb\0" \
 	"console=ttyO0,115200n8\0" \
-	"partitions=" \
-		"uuid_disk=${uuid_gpt_disk};" \
-		"name=rootfs,start=2MiB,size=-,uuid=${uuid_gpt_rootfs}\0" \
+	"rs232_txen=0\0" \
 	"optargs=" \
 		"ethaddr=${ethaddr}\0" \
 	"mmcdev=0\0" \
@@ -149,6 +147,8 @@
 #define CONFIG_SYS_NS16550_COM1		0x44e09000	/* Base EVM has UART0 */
 #define CONFIG_SYS_NS16550_COM2		0x48022000	/* UART1 */
 #define CONFIG_BAUDRATE			115200
+
+#define CONFIG_HAVEPRGUART	/* We have a programmable Uart physical */
 
 #define CONFIG_CMD_EEPROM
 #define CONFIG_ENV_EEPROM_IS_ON_I2C

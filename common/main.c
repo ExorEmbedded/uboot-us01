@@ -513,7 +513,13 @@ void main_loop(void)
 #endif
 
 		if (len == -1)
-			puts ("<INTERRUPT>\n");
+		{
+		  #ifdef CONFIG_HAVEPRGUART		  
+		  extern void ena_rs232phy(void);
+		  ena_rs232phy();
+		  #endif
+		  puts ("<INTERRUPT>\n");
+		}
 		else
 			rc = run_command(lastcommand, flag);
 

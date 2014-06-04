@@ -38,6 +38,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+void ena_rs232phy(void);
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 
 /*
@@ -47,10 +48,8 @@ static int read_eeprom(void)
 {
 #if (defined(CONFIG_CMD_I2CHWCFG))  
   extern int i2cgethwcfg (void);
-  printf("read_eeprom() : i2cgethwcfg \n");
   i2cgethwcfg();
-  printf("read_eeprom() : i2cgethwcfg called\n");
-  #endif
+#endif
   return 0;
 }
 
@@ -149,8 +148,6 @@ void am33xx_spl_board_init(void)
 
 const struct dpll_params *get_dpll_ddr_params(void)
 {
-  printf("get_dpll_ddr_params\n");
-
   enable_i2c0_pin_mux();
   i2c_init(CONFIG_SYS_OMAP24_I2C_SPEED, CONFIG_SYS_OMAP24_I2C_SLAVE);
 
@@ -159,21 +156,23 @@ const struct dpll_params *get_dpll_ddr_params(void)
 
 void set_uart_mux_conf(void)
 {
-  printf("set_uart_mux_conf++\n");
 #ifdef CONFIG_SERIAL1
   enable_uart0_pin_mux();
 #endif /* CONFIG_SERIAL1 */
 #ifdef CONFIG_SERIAL2
   enable_uart1_pin_mux();
 #endif /* CONFIG_SERIAL2 */
-  printf("set_uart_mux_conf--\n");
 }
 
 void set_mux_conf_regs(void)
 {
-  printf("set_mux_conf_regs++\n");
   enable_board_pin_mux();
-  printf("set_mux_conf_regs--\n");
+  
+  gpio_request(ESDBY_GPIO,"");
+  gpio_direction_output(ESDBY_GPIO,1);
+  
+  gpio_request(E3W3S_GPIO,"");
+  gpio_direction_output(E3W3S_GPIO,1);
 }
 
 const struct ctrl_ioregs ioregs_uS01 = {
@@ -186,14 +185,24 @@ const struct ctrl_ioregs ioregs_uS01 = {
 
 void sdram_init(void)
 {
-  printf("sdram_init++\n");
-
   config_ddr(400, &ioregs_uS01,
     &ddr3_data,
     &ddr3_cmd_ctrl_data,
     &ddr3_emif_reg_data, 0);
 }
 #endif
+
+void ena_rs232phy(void)
+{
+  gpio_request(RXEN0_GPIO,"");
+  gpio_direction_output(RXEN0_GPIO,1);
+  
+  gpio_request(DXEN0_GPIO,"");
+  gpio_direction_output(DXEN0_GPIO,1);
+  
+  gpio_request(MODE0_GPIO,"");
+  gpio_direction_output(MODE0_GPIO,0);
+}
 
 /*
  * Basic board specific setup.  Pinmux has been handled already.
@@ -212,13 +221,25 @@ int board_init(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
+  char* tmp;
+  unsigned long hwcode;
+  unsigned long rs232phyena = 0;
+  
   /* Get the system configuration from the I2C SEEPROM */
   read_eeprom();
   
-  /* Set the "board_name" env. variable according with the "hw_code" */
-  char* tmp;
-  unsigned long hwcode;
+  /* Enable the rs232 phy based on "rs232_txen" environment variable */
+  tmp = getenv("rs232_txen");
+  if(tmp)
+  {
+    rs232phyena = (simple_strtoul (tmp, NULL, 10))&0xff;
+    if(rs232phyena != 0)
+    {
+      ena_rs232phy();
+    }
+  }
   
+  /* Set the "board_name" env. variable according with the "hw_code" */
   tmp = getenv("hw_code");
   if(!tmp)
   {
@@ -238,6 +259,7 @@ int board_late_init(void)
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
     setenv("board_name", "usom_undefined");
   }
+  
   return 0;
 }
 #endif
