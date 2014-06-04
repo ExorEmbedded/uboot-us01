@@ -35,4 +35,5 @@ void enable_uart0_pin_mux(void);
 void enable_uart1_pin_mux(void);
 void enable_i2c0_pin_mux(void);
 void enable_board_pin_mux(void);
+void enable_rmii2_pin_mux(void);
 #endif

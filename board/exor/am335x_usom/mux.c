@@ -126,6 +126,18 @@ static struct module_pin_mux gpio_pin_mux[] = {
   {-1},
 };
 
+static struct module_pin_mux rmii2_pin_mux[] = {
+  {OFFSET(gpmc_wait0), MODE(3) | RXACTIVE},	//mii2_crs
+  {OFFSET(mii1_col), MODE(1) | RXACTIVE},       //rmii2_refclk  
+  {OFFSET(gpmc_a10), MODE(3) | RXACTIVE},	//mii2_rxd1
+  {OFFSET(gpmc_a11), MODE(3) | RXACTIVE},	//mii2_rxd0
+  {OFFSET(gpmc_wpn), MODE(3) | RXACTIVE},	//mii2_rxerr
+  {OFFSET(gpmc_a5), MODE(3)},	                //mii2_txd1		
+  {OFFSET(gpmc_a4), MODE(3)},	                //mii2_txd0		
+  {OFFSET(gpmc_a0), MODE(3)},	                //mii2_txen		
+  {-1},
+};
+
 void enable_uart0_pin_mux(void)
 {
   configure_module_pin_mux(uart0_pin_mux);
@@ -148,4 +160,9 @@ void enable_board_pin_mux(void)
 	configure_module_pin_mux(mmc0_pin_mux);
 	configure_module_pin_mux(mmc1_pin_mux);
 	configure_module_pin_mux(gpio_pin_mux);
+}
+
+void enable_rmii2_pin_mux(void)
+{
+  configure_module_pin_mux(rmii2_pin_mux);
 }

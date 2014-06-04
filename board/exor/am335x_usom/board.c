@@ -40,6 +40,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 void ena_rs232phy(void);
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
+static struct cpsw_slave_data cpsw_slaves[];
 
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
@@ -259,6 +260,13 @@ int board_late_init(void)
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
     setenv("board_name", "usom_undefined");
   }
+  
+  /* Platform related ethernet configuration */
+  if((hwcode==ETOP507_VAL)||(hwcode==ETOP507G_VAL))
+    cpsw_slaves[0].phy_addr = 2;
+  
+  if(hwcode==PLCM07_VAL)
+    enable_rmii2_pin_mux();
   
   return 0;
 }
