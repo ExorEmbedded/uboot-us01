@@ -68,6 +68,7 @@ static int mmc_load_image_raw_os(struct mmc *mmc)
 }
 #endif
 
+#ifndef CONFIG_SYS_EXOR_USOM
 void spl_mmc_load_image(void)
 {
 	struct mmc *mmc;
@@ -145,3 +146,100 @@ void spl_mmc_load_image(void)
 	if (err)
 		hang();
 }
+#else
+/* For Exor microsoms we use a dedicated sequence for loading u-boot, in order to have a recovery solution in case the system (SPL) booted
+ * from EMMC but the u-boot is not valid/present on the EMMC itself.
+ * For this reason, loading u-boot from the FAT formatted partition of a removable mmc card takes the precedence; if not found, we will proceed
+ * loading the u-boot in raw mode from the BOOT1 partition of the EMMC
+ */
+
+extern int spl_mmc_initialize(void);
+extern int spl_emmc_initialize(void);
+
+void spl_mmc_load_image(void)
+{
+  struct mmc *mmc;
+  int err;
+  int emmc_dev = 0;
+  u32 boot_mode;
+  
+  /* 1: Try loading u-boot from the FAT partition of a removable SD-card */
+  err = spl_mmc_initialize();
+  if(!err)
+  {
+    puts("spl: Trying loading u-boot from FAT partition of SD-Card ...\n");
+    emmc_dev ++;
+  }
+  
+  if(!err)
+  {
+    /* In SPL mode we always see 1 only mmc device */
+    mmc = find_mmc_device(0);
+    if (!mmc) 
+    {
+      puts("spl: SD-card device not found!!\n");
+      err = 1;
+    }
+  }
+  
+  if(!err)
+  {
+    err = mmc_init(mmc);
+    if (err) 
+    {
+      printf("spl: SD-card init failed: err - %d\n", err);
+    }
+  }
+  
+  if(!err)
+  {
+    err = spl_load_image_fat(&mmc->block_dev, CONFIG_SYS_MMC_SD_FAT_BOOT_PARTITION, CONFIG_SPL_FAT_LOAD_PAYLOAD_NAME); 
+    if(!err)
+      return;
+    
+    printf("spl: File: %s not found on SD-card ... loading RAW u-boot image from EMMC.\n",CONFIG_SPL_FAT_LOAD_PAYLOAD_NAME);
+  }
+  
+  /* 2: Try loading RAW u-boot image from EMMC BOOT1 partition */
+  err = spl_emmc_initialize();
+  if(!err)
+  {
+    puts("spl: Proceed loading RAW u-boot image from EMMC ...\n");
+  }
+  else
+  {
+    printf("spl: EMMC init failed: err: %d\n", err);
+    hang();
+  }
+  /* In SPL mode we always see 1 only mmc device */
+  mmc = find_mmc_device(0);
+  if (!mmc) 
+  {
+    puts("spl: EMMC device not found!!\n");
+    hang();
+  }
+  
+  err = mmc_init(mmc);
+  if (err) 
+  {
+    printf("spl: EMMC init failed: err - %d\n", err);
+    hang();
+  }
+  
+  printf("spl: Switching to EMMC partition n. %d ...\n", CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION);
+  if (mmc_switch_part(0, CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION)) 
+  {
+    puts("spl: EMMC partition switch failed\n");
+    hang();
+  }
+  
+  puts("spl: Loading raw u-boot image...\n");
+  err = mmc_load_image_raw(mmc, CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR);
+  
+  if (err)
+  {
+    puts("spl: EMMC error\n");
+    hang();
+  }
+}
+#endif

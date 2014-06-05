@@ -191,6 +191,22 @@ void sdram_init(void)
     &ddr3_cmd_ctrl_data,
     &ddr3_emif_reg_data, 0);
 }
+
+/*
+ * Init the mmc (mmc0) for the dedicated/custom SPL u-boot loading sequence. 
+ */
+int spl_board_mmc_initialize(void)
+{
+  return omap_mmc_init(0, 0, 0, -1, -1);
+}
+
+/*
+ * Init the EMMC (mmc1) for the dedicated/custom SPL u-boot loading sequence. 
+ */
+int spl_board_emmc_initialize(void)
+{
+  return omap_mmc_init(1, 0, 0, -1, -1);
+}
 #endif
 
 void ena_rs232phy(void)
