@@ -53,7 +53,8 @@
 	"loadaddr=0x80200000\0" \
 	"fdtaddr=0x80F80000\0" \
 	"fdt_high=0xffffffff\0" \
-	"boot_fdt=try\0" \
+	"boot_fdt=yes\0" \
+	"skipbsp1=0\0" \
 	"rdaddr=0x81000000\0" \
 	"bootpart=0:1\0" \
 	"bootdir=/boot\0" \
@@ -61,8 +62,7 @@
 	"fdtfile=usom_undefined.dtb\0" \
 	"console=ttyO0,115200n8\0" \
 	"rs232_txen=0\0" \
-	"optargs=" \
-		"ethaddr=${ethaddr}\0" \
+	"optargs=\0" \
 	"mmcdev=0\0" \
 	"mmcroot=/dev/mmcblk0p2 ro\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
@@ -72,10 +72,20 @@
 	"ramrootfstype=ext2\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
+		"ethaddr=${ethaddr} " \
 		"root=${mmcroot} " \
 		"rootfstype=${mmcrootfstype}\0" \
 	"netargs=setenv bootargs console=${console} " \
 		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
+		"ethaddr=${ethaddr} " \
 		"root=/dev/nfs " \
 		"nfsroot=${serverip}:${rootpath},${nfsopts} rw " \
 		"ip=dhcp\0" \
@@ -85,6 +95,11 @@
 		"env import -t $loadaddr $filesize\0" \
 	"ramargs=setenv bootargs console=${console} " \
 		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
+		"ethaddr=${ethaddr} " \
 		"root=${ramroot} " \
 		"rootfstype=${ramrootfstype}\0" \
 	"loadramdisk=load mmc ${mmcdev} ${rdaddr} ramdisk.gz\0" \
@@ -142,11 +157,21 @@
 
 #define CONFIG_BOOTCOMMAND \
 	"run findfdt; " \
+	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
+	"if test $skipbsp1 = 0; then " \
+	"echo Try booting Linux from EMMC, BSP1...;" \
+	"setenv mmcdev 1; " \
+	"setenv bootpart 1:1; " \
+	"setenv mmcroot /dev/mmcblk1p1 ro; " \
+	"run mmcboot;" \
+	"fi; " \
+	"echo Try booting Linux from EMMC, BSP2...;" \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
+	"setenv mmcroot /dev/mmcblk1p2 ro; " \
 	"run mmcboot;" 
-
+	
 /* NS16550 Configuration */
 #define CONFIG_SYS_NS16550_COM1		0x44e09000	/* Base EVM has UART0 */
 #define CONFIG_SYS_NS16550_COM2		0x48022000	/* UART1 */
