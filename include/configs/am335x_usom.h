@@ -66,7 +66,7 @@
 	"rs232_txen=0\0" \
 	"optargs=\0" \
 	"mmcdev=0\0" \
-	"mmcroot=/dev/mmcblk0p2 ro\0" \
+	"mmcroot=/dev/mmcblk0p2 rw\0" \
 	"mmcrootfstype=ext4 rootwait\0" \
 	"rootpath=/export/rootfs\0" \
 	"nfsopts=nolock\0" \
@@ -165,7 +165,7 @@
 	"echo Try booting Linux from EMMC, BSP1...;" \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:1; " \
-	"setenv mmcroot /dev/mmcblk1p1 ro; " \
+	"setenv mmcroot /dev/mmcblk1p1 rw; " \
 	"run mmcboot;" \
 	"fi; " \
 	"echo Try booting Linux from EMMC, BSP2...;" \
