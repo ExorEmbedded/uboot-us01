@@ -157,7 +157,12 @@
 			"setenv fdtfile usom_undefined.dtb; fi; \0" 
 #endif
 
+#undef  CONFIG_BOOTDELAY
+#define CONFIG_BOOTDELAY 0
+#define CONFIG_ZERO_BOOTDELAY_CHECK
+
 #define CONFIG_BOOTCOMMAND \
+	"setenv mmcdev 0; " \
 	"run findfdt; " \
 	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
@@ -175,6 +180,8 @@
 	"run mmcboot;" 
 
 #define CONFIG_SYS_ALT_BOOTCOMMAND \
+	"i2c mw 68 19 0; " \
+	"setenv mmcdev 0; " \
 	"run findfdt; " \
 	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
@@ -205,9 +212,13 @@
 #define CONFIG_SPL_POWER_SUPPORT
 #define CONFIG_SPL_YMODEM_SUPPORT
 
-/* Bootcount using the RTC block */
+/* Bootcount using the M41T83 I2C RTC NVRAM */
 #define CONFIG_BOOTCOUNT_LIMIT
-#define CONFIG_BOOTCOUNT_AM33XX
+#define CONFIG_BOOTCOUNT_I2C
+#define CONFIG_BOOTCOUNT_ALEN 1
+#define CONFIG_SYS_I2C_RTC_ADDR 0x68
+#undef  CONFIG_SYS_BOOTCOUNT_ADDR
+#define CONFIG_SYS_BOOTCOUNT_ADDR 0x19
 
 #define CONFIG_SPL_ENV_SUPPORT
 #define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/am33xx/u-boot-spl.lds"
