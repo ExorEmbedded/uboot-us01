@@ -167,13 +167,13 @@
 	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
 	"if test $skipbsp1 = 0; then " \
-	"echo Try booting Linux from EMMC, BSP1...;" \
+	"echo Try booting Linux from EMMC, main BSP...;" \
 	"setenv mmcdev 1; " \
-	"setenv bootpart 1:1; " \
-	"setenv mmcroot /dev/mmcblk1p1 rw; " \
+	"setenv bootpart 1:3; " \
+	"setenv mmcroot /dev/mmcblk1p3 ro; " \
 	"run mmcboot;" \
 	"fi; " \
-	"echo Try booting Linux from EMMC, BSP2...;" \
+	"echo Try booting Linux from EMMC, recovery BSP...;" \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
@@ -185,7 +185,7 @@
 	"run findfdt; " \
 	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
-	"echo Try booting Linux from EMMC, BSP2...;" \
+	"echo Try booting Linux from EMMC, recovery BSP...;" \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
