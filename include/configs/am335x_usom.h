@@ -62,7 +62,7 @@
 	"bootdir=/boot\0" \
 	"bootfile=zImage\0" \
 	"fdtfile=usom_undefined.dtb\0" \
-	"console=ttyO0,115200n8\0" \
+	"console=/dev/null\0" \
 	"rs232_txen=0\0" \
 	"optargs=\0" \
 	"mmcdev=0\0" \
