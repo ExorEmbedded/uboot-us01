@@ -30,6 +30,11 @@
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR 	0
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION	1
 
+/* memory test */
+#define CONFIG_CMD_MEMTEST
+#define CONFIG_SYS_MEMTEST_START 0x80000000
+#define CONFIG_SYS_MEMTEST_END   0xA0000000
+
 /* Clock Defines */
 #define V_OSCK				24000000  /* Clock output from T2 */
 #define V_SCLK				(V_OSCK)
