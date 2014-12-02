@@ -299,12 +299,12 @@ static struct cpsw_slave_data cpsw_slaves[] = {
   {
     .slave_reg_ofs	= 0x208,
     .sliver_reg_ofs	= 0xd80,
-    .phy_addr 		= 0,  //NOTE: This value will be set to 2 in case of etop5xx (we have a switch in this case)
+    .phy_addr 		= 1,  //NOTE: This value will be set to 2 in case of etop5xx (we have a switch in this case)
   },
   {
   .slave_reg_ofs 	= 0x308,
   .sliver_reg_ofs	= 0xdc0,
-  .phy_addr		= 1,
+  .phy_addr		= 0,
   },
 };
 
