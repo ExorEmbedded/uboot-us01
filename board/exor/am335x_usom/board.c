@@ -49,10 +49,33 @@ static int read_eeprom(void)
 {
 #if (defined(CONFIG_CMD_I2CHWCFG))  
   extern int i2cgethwcfg (void);
-  i2cgethwcfg();
+  return i2cgethwcfg();
 #endif
   return 0;
 }
+
+/*
+ * Reads the $hwcfg$.txt file from USB stick (root of FATFS partition) if any, parses it
+ * and updates the environment variable accordingly.
+ * 
+ * NOTE: This function is used in case the I2C SEEPROM contents are not valid, in order to get
+ *       a temporary and volatile HW configuration from USB to boot properly Linux (even if the I2C SEEPROM is not programmed) 
+ */
+static int USBgethwcfg(void)
+{
+  
+  printf("Trying to get the HW cfg from USB stick...\n");
+  
+  run_command("usb stop", 0);
+  run_command("usb reset", 0);
+  run_command("setenv filesize 0", 0);
+  run_command("fatload usb 0 ${loadaddr} hwcfg.txt", 0);
+  run_command("env import -t ${loadaddr} ${filesize}", 0);
+  run_command("usb stop", 0);
+  
+  return 0;
+}
+
 
 #if defined(CONFIG_SPL_BUILD)
 static const struct ddr_data ddr3_data = {
@@ -219,6 +242,8 @@ void ena_rs232phy(void)
   
   gpio_request(MODE0_GPIO,"");
   gpio_direction_output(MODE0_GPIO,0);
+  
+  udelay(1000);
 }
 
 /*
@@ -243,7 +268,12 @@ int board_late_init(void)
   unsigned long rs232phyena = 0;
   
   /* Get the system configuration from the I2C SEEPROM */
-  read_eeprom();
+  if(read_eeprom())
+  {
+    ena_rs232phy();
+    printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
+    USBgethwcfg();
+  }
   
   /* Enable the rs232 phy based on "rs232_txen" environment variable */
   tmp = getenv("rs232_txen");
