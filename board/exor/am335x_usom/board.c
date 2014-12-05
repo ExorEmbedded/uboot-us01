@@ -261,11 +261,13 @@ int board_init(void)
 }
 
 #ifdef CONFIG_BOARD_LATE_INIT
+#define US01_256MB_300MHZ 0x02
 int board_late_init(void)
 {
   char* tmp;
   unsigned long hwcode;
   unsigned long rs232phyena = 0;
+  unsigned long jumperflagsl = 0;
   
   /* Get the system configuration from the I2C SEEPROM */
   if(read_eeprom())
@@ -283,6 +285,23 @@ int board_late_init(void)
     if(rs232phyena != 0)
     {
       ena_rs232phy();
+    }
+  }
+  
+  /* Process the jumperflags and perform any eventual required action */
+  tmp = getenv("jumperflagsl");
+  if(tmp)
+  {
+    jumperflagsl = (simple_strtoul (tmp, NULL, 10))&0xff;
+    if(jumperflagsl != 0xff)
+    {
+      if(jumperflagsl & US01_256MB_300MHZ)
+      { //We need to unconditionally force/downscale to 256MB RAM and 300Mhz CPU clock
+	puts ("Set to 256MB RAM and 300Mhz CPU clock...\n");
+	dpll_mpu_opp100.m = 300;
+	do_setup_dpll(&dpll_mpu_regs, &dpll_mpu_opp100);
+	setenv("optargs","mem=256M");
+      }
     }
   }
   

@@ -55,6 +55,7 @@
 
 /* Data */
 #define DISPID_POS		5
+#define JUMPERFLAGSL_POS	14
 #define TCHTYPE_POS		21
 
 #define MACID0_POS		24
@@ -260,6 +261,10 @@ int i2cgethwcfg (void)
   sprintf(label, "%u", buf[HWPICKPANELCODE_POS]);
   setenv("hw_code", label); 
   
+  /* get jumperflagsl */
+  sprintf(label, "%u", buf[JUMPERFLAGSL_POS]);
+  setenv("jumperflagsl", label); 
+ 
   return 0;
 }
   
