@@ -76,6 +76,12 @@
 #define ZEROCKSUM		0x57
 #define SAFE_FACTORY_AREA_POS	184
 
+#define AUXMACID0_POS                   55
+#define AUXMACID1_POS                   56
+#define AUXMACID2_POS                   57
+#define AUXMACID3_POS                   58
+#define AUXMACID4_POS                   59
+#define AUXMACID5_POS                   60
 
 /*=======================================================================
  * I2C pre-defined / fixed values
@@ -264,6 +270,9 @@ int i2cgethwcfg (void)
   /* get jumperflagsl */
   sprintf(label, "%u", buf[JUMPERFLAGSL_POS]);
   setenv("jumperflagsl", label); 
+
+  /* get 2nd eth mac ID */
+  eth_setenv_enetaddr("eth1addr", &(buf[AUXMACID0_POS]));
  
   return 0;
 }
@@ -339,6 +348,21 @@ int do_i2csavehw ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
   {
 	puts ("ERROR: 'ethaddr' environment var not found!\n");
 	return 1;
+  }
+
+  /* 2nd Eth mac address handling */
+  if (eth_getenv_enetaddr("eth1addr", hw_addr))
+  {
+	buf[AUXMACID0_POS] = hw_addr[0];
+	buf[AUXMACID1_POS] = hw_addr[1];
+	buf[AUXMACID2_POS] = hw_addr[2];
+	buf[AUXMACID3_POS] = hw_addr[3];
+	buf[AUXMACID4_POS] = hw_addr[4];
+	buf[AUXMACID5_POS] = hw_addr[5];
+  }
+  else
+  {
+	puts ("WARNING: 'eth1addr' environment var not found ... skipped\n");
   }
 
   /* hw_code handling */
