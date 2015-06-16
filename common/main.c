@@ -194,7 +194,7 @@ static int abortboot_normal(int bootdelay)
 	printf(CONFIG_MENUPROMPT);
 #else
 	if (bootdelay >= 0)
-		printf("Hit any key to stop autoboot: %2d ", bootdelay);
+		printf("Hit <ctrl-c> to stop autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -203,8 +203,8 @@ static int abortboot_normal(int bootdelay)
 	 * Don't check if bootdelay < 0
 	 */
 	if (bootdelay >= 0) {
-		if (tstc()) {	/* we got a key press	*/
-			(void) getc();  /* consume input	*/
+		if (ctrlc()) {	/* we got a key press	*/
+			//(void) getc();  /* consume input	*/
 			puts ("\b\b\b 0");
 			abort = 1;	/* don't auto boot	*/
 		}
@@ -216,13 +216,13 @@ static int abortboot_normal(int bootdelay)
 		/* delay 1000 ms */
 		ts = get_timer(0);
 		do {
-			if (tstc()) {	/* we got a key press	*/
+			if (ctrlc()) {	/* we got a key press	*/
 				abort  = 1;	/* don't auto boot	*/
 				bootdelay = 0;	/* no more delay	*/
 # ifdef CONFIG_MENUKEY
 				menukey = getc();
 # else
-				(void) getc();  /* consume input	*/
+				//(void) getc();  /* consume input	*/
 # endif
 				break;
 			}
