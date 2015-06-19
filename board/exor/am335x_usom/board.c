@@ -333,6 +333,22 @@ int board_late_init(void)
   if(hwcode==PLCM07_VAL)
     enable_rmii2_pin_mux();
   
+  /* Determine which mainOS has to be booted (Android vs Linux) based on the swflag_android env. variable, taken from SEEPROM */
+  /* Override the swflag_android env. variable if $0030d8android$.bin or $0030d8linux$.bin files are found into the Linux data partition */
+  run_command("mmc dev 1", 0);
+  run_command("mmc rescan", 0);
+  run_command("if test -e mmc 1:6 /$0030d8android$.bin; then setenv swflag_android 1; fi", 0);
+  run_command("if test -e mmc 1:6 /$0030d8linux$.bin; then setenv swflag_android 0; fi", 0);
+ 
+  tmp = getenv("swflag_android");
+  if((tmp) && (tmp[0] == '1'))
+  {
+    puts ("mainOS: Android\n");
+    setenv("bootcmd", CONFIG_ANDROID_BOOTCOMMAND);
+  }
+  else
+    setenv("bootcmd", CONFIG_BOOTCOMMAND);
+  
   return 0;
 }
 #endif

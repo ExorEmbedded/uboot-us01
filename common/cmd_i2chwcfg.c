@@ -95,6 +95,39 @@
   extern int getdisplay(unsigned int lcdid);
 #endif
 
+/*=======================================================================
+ * Accessor method for reading the SWmoduleFlag area
+ *======================================================================= */
+#define SWMODULEFLAG_AREA_OFFSET 248
+#define SWMODULEFLAG_AREA_LEN    8
+#define ANDROID_BIT_POS          5
+
+/* Return the value of the specified bit (bitIndex) in the SWModuleFlag are.
+ * 
+ * Return: false (the bit is not set, or we have an error)
+ *         true  (the bit is set)
+ */
+bool getBitInSWModuleFlagArea(unsigned int bitIndex)
+{
+  unsigned char   SWModuleArea[SWMODULEFLAG_AREA_LEN];
+  unsigned char   i, chksum = 1;
+  
+  if(bitIndex/8 >= SWMODULEFLAG_AREA_LEN) 
+    return false;
+ 
+  if (i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, SWMODULEFLAG_AREA_OFFSET, 1, SWModuleArea, SWMODULEFLAG_AREA_LEN) != 0)
+    return false;
+  
+  for(i = 0; i < SWMODULEFLAG_AREA_LEN-1 ; i++)
+    chksum += SWModuleArea[i]; 
+  chksum -= 0xAA;
+  if(chksum != SWModuleArea[SWMODULEFLAG_AREA_LEN-1])
+  {
+    return false;    //checksum error
+  }
+  return (SWModuleArea[bitIndex/8] & (1 << (bitIndex & 7)))? true : false;
+}
+
 /* ======================================================================
  * Helper function indicating if the buffer contents define a valid 
  * factory section, format >= 3. Returns 1 if valid, 0 otherwise.
@@ -273,6 +306,16 @@ int i2cgethwcfg (void)
 
   /* get 2nd eth mac ID */
   eth_setenv_enetaddr("eth1addr", &(buf[AUXMACID0_POS]));
+  
+  /* get the swflag_android from the SWModuleFlagArea */
+  if(getBitInSWModuleFlagArea(ANDROID_BIT_POS))
+  {
+    setenv("swflag_android", "1"); 
+  }
+  else
+  {
+    setenv("swflag_android", "0"); 
+  }
  
   return 0;
 }

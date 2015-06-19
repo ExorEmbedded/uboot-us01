@@ -196,6 +196,26 @@
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
 	"run mmcboot;" 
 
+#define CONFIG_ANDROID_BOOTCOMMAND \
+	"setenv mmcdev 0; " \
+	"run findfdt; " \
+	"echo Try booting Linux from SD-card...;" \
+	"run mmcboot;" \
+	"if test $skipbsp1 = 0; then " \
+	"echo Try booting Android from EMMC, main BSP...;" \
+	"setenv bootargs console=ttyO0,115200n8 androidboot.console=ttyO0 rootwait ro; " \
+	"mmc dev 1; " \
+	"mmc rescan; " \
+	"ext4load mmc 1:8 82000000 uImage ; " \
+	"ext4load mmc 1:8 83000000 uRamdisk; " \
+	"bootm 82000000 83000000; " \
+	"fi; " \
+	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv mmcdev 1; " \
+	"setenv bootpart 1:2; " \
+	"setenv mmcroot /dev/mmcblk1p2 ro; " \
+	"run mmcboot;" 
+	
 /* NS16550 Configuration */
 #define CONFIG_SYS_NS16550_COM1		0x44e09000	/* Base EVM has UART0 */
 #define CONFIG_SYS_NS16550_COM2		0x48022000	/* UART1 */
