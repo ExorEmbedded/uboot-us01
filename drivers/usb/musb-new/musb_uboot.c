@@ -116,7 +116,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 {
 	u8 power;
 	void *mbase;
-	int timeout = MUSB_HOST_TIMEOUT;
+	int timeout = 5000;
 
 	if (!host) {
 		printf("MUSB host is not registered\n");
@@ -128,6 +128,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	do {
 		if (musb_readb(mbase, MUSB_DEVCTL) & MUSB_DEVCTL_HM)
 			break;
+		mdelay(1);
 	} while (--timeout);
 	if (!timeout)
 		return -ENODEV;
