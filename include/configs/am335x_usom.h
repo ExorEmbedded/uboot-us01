@@ -141,6 +141,40 @@
 				"run mmcloados;" \
 			"fi;" \
 		"fi;\0" \
+	"usbargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
+		"ethaddr=${ethaddr} " \
+		"root=${usbroot} " \
+		"rootfstype=${usbrootfstype}\0" \
+	"usbroot=/dev/sda2 rw\0" \
+	"usbrootfstype=ext4 rootwait\0" \
+	"usbloados=run usbargs; " \
+		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
+			"if run usbloadfdt; then " \
+				"bootz ${loadaddr} - ${fdtaddr}; " \
+			"else " \
+				"if test ${boot_fdt} = try; then " \
+					"bootz; " \
+				"else " \
+					"echo WARN: Cannot load the DT; " \
+				"fi; " \
+			"fi; " \
+		"else " \
+			"bootz; " \
+		"fi;\0" \
+	"usbloadimage=load usb 0 ${loadaddr} ${bootdir}/${bootfile}\0" \
+	"usbloadfdt=load usb 0 ${fdtaddr} ${bootdir}/${fdtfile}\0" \
+	"usbboot=mmc dev ${mmcdev}; " \
+		"if usb reset; then " \
+			"if run usbloadimage; then " \
+				"run usbloados;" \
+			"fi;" \
+			"usb stop;" \
+		"fi;\0" \
 	"netboot=echo Booting from network ...; " \
 		"setenv autoload no; " \
 		"dhcp; " \
@@ -178,6 +212,8 @@
 	"setenv mmcroot /dev/mmcblk1p3 ro; " \
 	"run mmcboot;" \
 	"fi; " \
+	"echo Try booting Linux from USB stick...;" \
+	"run usbboot;" \
 	"echo Try booting Linux from EMMC, recovery BSP...;" \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
@@ -190,6 +226,8 @@
 	"run findfdt; " \
 	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
+	"echo Try booting Linux from USB stick...;" \
+	"run usbboot;" \
 	"echo Try booting Linux from EMMC, recovery BSP...;" \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
