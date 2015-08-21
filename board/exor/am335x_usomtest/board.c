@@ -258,13 +258,10 @@ int board_late_init(void)
   unsigned long hwcode;
   unsigned char buf;
   
-  /* Get the system configuration from the I2C SEEPROM */
-  if(read_eeprom())
-  {
-    ena_rs232phy();
-    printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
-    USBgethwcfg();
-  }
+  /* Get the system configuration from USB stick */
+  ena_rs232phy();
+  printf("Reading the system configuration from USB stick ...\n");
+  USBgethwcfg();
   
   /* Initialize the MCP23016 I/O expander @ 0x20 to all outs to 0
    */
