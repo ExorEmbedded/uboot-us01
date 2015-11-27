@@ -7,7 +7,7 @@
  * Based on code from LTIB:
  * Freescale GPMI NFC NAND Flash Driver
  *
- * Copyright (C) 2010 Freescale Semiconductor, Inc.
+ * Copyright (C) 2010-2014 Freescale Semiconductor, Inc.
  * Copyright (C) 2008 Embedded Alley Solutions, Inc.
  *
  * SPDX-License-Identifier:	GPL-2.0+
@@ -40,6 +40,9 @@
 #define	MXS_NAND_COMMAND_BUFFER_SIZE		32
 
 #define	MXS_NAND_BCH_TIMEOUT			10000
+
+int chunk_data_chunk_size = MXS_NAND_CHUNK_DATA_CHUNK_SIZE;
+int galois_field = 13;
 
 struct mxs_nand_info {
 	int		cur_chip;
@@ -130,12 +133,12 @@ static void mxs_nand_return_dma_descs(struct mxs_nand_info *info)
 
 static uint32_t mxs_nand_ecc_chunk_cnt(uint32_t page_data_size)
 {
-	return page_data_size / MXS_NAND_CHUNK_DATA_CHUNK_SIZE;
+	return page_data_size / chunk_data_chunk_size;
 }
 
 static uint32_t mxs_nand_ecc_size_in_bits(uint32_t ecc_strength)
 {
-	return ecc_strength * 13;
+	return ecc_strength * galois_field;
 }
 
 static uint32_t mxs_nand_aux_status_offset(void)
@@ -146,21 +149,14 @@ static uint32_t mxs_nand_aux_status_offset(void)
 static inline uint32_t mxs_nand_get_ecc_strength(uint32_t page_data_size,
 						uint32_t page_oob_size)
 {
-	if (page_data_size == 2048)
-		return 8;
+	int ecc_strength;
 
-	if (page_data_size == 4096) {
-		if (page_oob_size == 128)
-			return 8;
+	ecc_strength = ((page_oob_size - MXS_NAND_METADATA_SIZE) * 8)
+		/(galois_field * mxs_nand_ecc_chunk_cnt(page_data_size));
 
-		if (page_oob_size == 218)
-			return 16;
-
-		if (page_oob_size == 224)
-			return 16;
-	}
-
-	return 0;
+	/* We need the minor even number. */
+	ecc_strength -= ecc_strength & 1;
+	return ecc_strength;
 }
 
 static inline uint32_t mxs_nand_get_mark_offset(uint32_t page_data_size,
@@ -173,7 +169,7 @@ static inline uint32_t mxs_nand_get_mark_offset(uint32_t page_data_size,
 	uint32_t block_mark_chunk_bit_offset;
 	uint32_t block_mark_bit_offset;
 
-	chunk_data_size_in_bits = MXS_NAND_CHUNK_DATA_CHUNK_SIZE * 8;
+	chunk_data_size_in_bits = chunk_data_chunk_size * 8;
 	chunk_ecc_size_in_bits  = mxs_nand_ecc_size_in_bits(ecc_strength);
 
 	chunk_total_size_in_bits =
@@ -972,6 +968,11 @@ static int mxs_nand_scan_bbt(struct mtd_info *mtd)
 	struct mxs_bch_regs *bch_regs = (struct mxs_bch_regs *)MXS_BCH_BASE;
 	uint32_t tmp;
 
+	if (mtd->oobsize > MXS_NAND_CHUNK_DATA_CHUNK_SIZE) {
+		chunk_data_chunk_size = MXS_NAND_CHUNK_DATA_CHUNK_SIZE * 2;
+		galois_field = 14;
+	}
+
 	/* Configure BCH and set NFC geometry */
 	mxs_reset_block(&bch_regs->hw_bch_ctrl_reg);
 
@@ -981,16 +982,20 @@ static int mxs_nand_scan_bbt(struct mtd_info *mtd)
 	tmp |= MXS_NAND_METADATA_SIZE << BCH_FLASHLAYOUT0_META_SIZE_OFFSET;
 	tmp |= (mxs_nand_get_ecc_strength(mtd->writesize, mtd->oobsize) >> 1)
 		<< BCH_FLASHLAYOUT0_ECC0_OFFSET;
-	tmp |= MXS_NAND_CHUNK_DATA_CHUNK_SIZE
+	tmp |= chunk_data_chunk_size
 		>> MXS_NAND_CHUNK_DATA_CHUNK_SIZE_SHIFT;
+	tmp |= (14 == galois_field ? 1 : 0)
+		<< BCH_FLASHLAYOUT0_GF13_0_GF14_1_OFFSET;
 	writel(tmp, &bch_regs->hw_bch_flash0layout0);
 
 	tmp = (mtd->writesize + mtd->oobsize)
 		<< BCH_FLASHLAYOUT1_PAGE_SIZE_OFFSET;
 	tmp |= (mxs_nand_get_ecc_strength(mtd->writesize, mtd->oobsize) >> 1)
 		<< BCH_FLASHLAYOUT1_ECCN_OFFSET;
-	tmp |= MXS_NAND_CHUNK_DATA_CHUNK_SIZE
+	tmp |= chunk_data_chunk_size
 		>> MXS_NAND_CHUNK_DATA_CHUNK_SIZE_SHIFT;
+	tmp |= (14 == galois_field ? 1 : 0)
+		<< BCH_FLASHLAYOUT1_GF13_0_GF14_1_OFFSET;
 	writel(tmp, &bch_regs->hw_bch_flash0layout1);
 
 	/* Set *all* chip selects to use layout 0 */
