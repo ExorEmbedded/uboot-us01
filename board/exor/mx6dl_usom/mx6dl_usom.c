@@ -62,7 +62,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define I2C_PAD_CTRL	(PAD_CTL_PUS_100K_UP |			\
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS |	\
 	PAD_CTL_ODE | PAD_CTL_SRE_FAST)
-
+	
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 
 #define SPI_PAD_CTRL (PAD_CTL_HYS |				\
@@ -114,23 +114,8 @@ iomux_v3_cfg_t const enet_pads[] = {
 	MX6_PAD_RGMII_RX_CTL__RGMII_RX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 };
 
-/* I2C2 PMIC, iPod, Tuner, Codec, Touch, HDMI EDID, MIPI CSI2 card */
-struct i2c_pads_info i2c_pad_info1 = {
-	.scl = {
-		.i2c_mode = MX6_PAD_EIM_EB2__I2C2_SCL | PC,
-		.gpio_mode = MX6_PAD_EIM_EB2__GPIO2_IO30 | PC,
-		.gp = IMX_GPIO_NR(2, 30)
-	},
-	.sda = {
-		.i2c_mode = MX6_PAD_KEY_ROW3__I2C2_SDA | PC,
-		.gpio_mode = MX6_PAD_KEY_ROW3__GPIO4_IO13 | PC,
-		.gp = IMX_GPIO_NR(4, 13)
-	}
-};
-
 /*
- * I2C3 MLB, Port Expanders (A, B, C), Video ADC, Light Sensor,
- * Compass Sensor, Accelerometer, Res Touch
+ * I2C bus mapped to I2C3 port
  */
 struct i2c_pads_info i2c_pad_info2 = {
 	.scl = {
@@ -139,12 +124,11 @@ struct i2c_pads_info i2c_pad_info2 = {
 		.gp = IMX_GPIO_NR(1, 3)
 	},
 	.sda = {
-		.i2c_mode = MX6_PAD_EIM_D18__I2C3_SDA | PC,
-		.gpio_mode = MX6_PAD_EIM_D18__GPIO3_IO18 | PC,
-		.gp = IMX_GPIO_NR(3, 18)
+		.i2c_mode = MX6_PAD_GPIO_6__I2C3_SDA | PC,
+		.gpio_mode = MX6_PAD_GPIO_6__GPIO1_IO06 | PC,
+		.gp = IMX_GPIO_NR(1, 6)
 	}
 };
-
 
 static void setup_iomux_enet(void)
 {
@@ -213,7 +197,7 @@ static int setup_pmic_mode(int chip)
 static int setup_pmic_voltages(void)
 {
 	unsigned char value, rev_id = 0 ;
-	i2c_set_bus_num(1);
+	i2c_set_bus_num(2);
 	if (!i2c_probe(0x8)) {
 		if (i2c_read(0x8, 0, 1, &value, 1)) {
 			printf("Read device ID error!\n");
@@ -478,7 +462,7 @@ int board_late_init(void)
 #endif
 
 #ifdef CONFIG_SYS_I2C_MXC
-	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
 	ret = setup_pmic_voltages();
 	if (ret)
 		return -1;
