@@ -46,7 +46,7 @@
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2 /* Enabled USB controller number */
 
 #define CONFIG_SYS_FSL_USDHC_NUM	2
-#define CONFIG_SYS_MMC_ENV_DEV		0  /* SDHC4, EMMC */
+#define CONFIG_SYS_MMC_ENV_DEV		1  /* SDHC4, EMMC */
 #define CONFIG_SYS_MMC_ENV_PART         2  /* BOOT2 partition */
 
 #ifdef CONFIG_SYS_USE_SPINOR

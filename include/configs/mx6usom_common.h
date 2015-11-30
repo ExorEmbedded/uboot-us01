@@ -69,6 +69,7 @@
 #define CONFIG_CMD_EXT2
 #define CONFIG_CMD_FAT
 #define CONFIG_DOS_PARTITION
+#define CONFIG_CMD_FS_GENERIC
 
 #define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
 
@@ -101,67 +102,64 @@
 
 #define CONFIG_BOOTDELAY               1
 
-#define CONFIG_LOADADDR                        0x12000000
+#define CONFIG_LOADADDR                0x12000000
 #define CONFIG_SYS_TEXT_BASE           0x17800000
 #define CONFIG_SYS_MMC_IMG_LOAD_PART	1
 
 #define CONFIG_MFG_NAND_PARTITION ""
 
-#define CONFIG_MFG_ENV_SETTINGS \
-	"mfgtool_args=setenv bootargs console=" CONFIG_CONSOLE_DEV ",115200 " \
-		"rdinit=/linuxrc " \
-		"g_mass_storage.stall=0 g_mass_storage.removable=1 " \
-		"g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
-		"g_mass_storage.iSerialNumber=\"\" "\
-		"enable_wait_mode=off "\
-		CONFIG_MFG_NAND_PARTITION \
-		"\0" \
-		"initrd_addr=0x12C00000\0" \
-		"initrd_high=0xffffffff\0" \
-		"bootcmd_mfg=run mfgtool_args;bootz ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
-
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS \
-	"script=boot.scr\0" \
-	"image=zImage\0" \
-	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
-	"fdt_addr=0x18000000\0" \
-	"boot_fdt=try\0" \
-	"ip_dyn=yes\0" \
-	"console=" CONFIG_CONSOLE_DEV "\0" \
-	"fdt_high=0xffffffff\0"	  \
-	"initrd_high=0xffffffff\0" \
-	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
-	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
-	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
-	"mmcautodetect=yes\0" \
-	"update_sd_firmware=" \
-		"if test ${ip_dyn} = yes; then " \
-			"setenv get_cmd dhcp; " \
-		"else " \
-			"setenv get_cmd tftp; " \
-		"fi; " \
-		"if mmc dev ${mmcdev}; then "	\
-			"if ${get_cmd} ${update_sd_firmware_filename}; then " \
-				"setexpr fw_sz ${filesize} / 0x200; " \
-				"setexpr fw_sz ${fw_sz} + 1; "	\
-				"mmc write ${loadaddr} 0x2 ${fw_sz}; " \
-			"fi; "	\
-		"fi\0" \
+	"altbootcmd="CONFIG_SYS_ALT_BOOTCOMMAND"\0"\
+	"bootlimit=3\0" \
+	"loadaddr=0x12000000\0" \
+	"fdtaddr=0x18000000\0" \
+	"fdt_high=0xffffffff\0" \
+	"boot_fdt=yes\0" \
 	"smp=" CONFIG_SYS_NOSMP "\0"\
-	"mmcargs=setenv bootargs console=${console},${baudrate} ${smp} " \
-		"root=${mmcroot}\0" \
-	"loadbootscript=" \
-		"fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
-	"bootscript=echo Running bootscript from mmc ...; " \
-		"source\0" \
-	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
-	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
-	"mmcboot=echo Booting from mmc ...; " \
-		"run mmcargs; " \
+	"skipbsp1=0\0" \
+	"bootpart=0:1\0" \
+	"bootdir=/boot\0" \
+	"bootfile=zImage\0" \
+	"fdtfile=usom_undefined.dtb\0" \
+	"console=/dev/null\0" \
+	"rs232_txen=0\0" \
+	"optargs=\0" \
+	"mmcdev=0\0" \
+	"mmcroot=/dev/mmcblk0p2 rw\0" \
+	"mmcrootfstype=ext4 rootwait\0" \
+	"rootpath=/export/rootfs\0" \
+	"nfsopts=nolock\0" \
+	"mmcargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
+		"ethaddr=${ethaddr} " \
+		"root=${mmcroot} " \
+		"${smp} " \
+		"rootfstype=${mmcrootfstype}\0" \
+	"netargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
+		"ethaddr=${ethaddr} " \
+		"root=/dev/nfs " \
+		"nfsroot=${serverip}:${rootpath},${nfsopts} rw " \
+		"${smp} " \
+		"ip=dhcp\0" \
+	"bootenv=uEnv.txt\0" \
+	"loadbootenv=load mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
+	"importbootenv=echo Importing environment from mmc ...; " \
+		"env import -t $loadaddr $filesize\0" \
+	"loadimage=load mmc ${bootpart} ${loadaddr} ${bootdir}/${bootfile}\0" \
+	"loadfdt=load mmc ${bootpart} ${fdtaddr} ${bootdir}/${fdtfile}\0" \
+	"mmcloados=run mmcargs; " \
 		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
 			"if run loadfdt; then " \
-				"bootz ${loadaddr} - ${fdt_addr}; " \
+				"bootz ${loadaddr} - ${fdtaddr}; " \
 			"else " \
 				"if test ${boot_fdt} = try; then " \
 					"bootz; " \
@@ -172,20 +170,37 @@
 		"else " \
 			"bootz; " \
 		"fi;\0" \
-	"netargs=setenv bootargs console=${console},${baudrate} ${smp} " \
-		"root=/dev/nfs " \
-		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
-	"netboot=echo Booting from net ...; " \
-		"run netargs; " \
-		"if test ${ip_dyn} = yes; then " \
-			"setenv get_cmd dhcp; " \
-		"else " \
-			"setenv get_cmd tftp; " \
-		"fi; " \
-		"${get_cmd} ${image}; " \
+	"mmcboot=mmc dev ${mmcdev}; " \
+		"if mmc rescan; then " \
+			"echo SD/MMC found on device ${mmcdev};" \
+			"if run loadbootenv; then " \
+				"echo Loaded environment from ${bootenv};" \
+				"run importbootenv;" \
+			"fi;" \
+			"if test -n $uenvcmd; then " \
+				"echo Running uenvcmd ...;" \
+				"run uenvcmd;" \
+			"fi;" \
+			"if run loadimage; then " \
+				"run mmcloados;" \
+			"fi;" \
+		"fi;\0" \
+	"usbargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
+		"ethaddr=${ethaddr} " \
+		"root=${usbroot} " \
+		"${smp} " \
+		"rootfstype=${usbrootfstype}\0" \
+	"usbroot=/dev/sda2 rw\0" \
+	"usbrootfstype=ext4 rootwait\0" \
+	"usbloados=run usbargs; " \
 		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-				"bootz ${loadaddr} - ${fdt_addr}; " \
+			"if run usbloadfdt; then " \
+				"bootz ${loadaddr} - ${fdtaddr}; " \
 			"else " \
 				"if test ${boot_fdt} = try; then " \
 					"bootz; " \
@@ -195,22 +210,66 @@
 			"fi; " \
 		"else " \
 			"bootz; " \
-		"fi;\0"
-
+		"fi;\0" \
+	"usbloadimage=load usb 0 ${loadaddr} ${bootdir}/${bootfile}\0" \
+	"usbloadfdt=load usb 0 ${fdtaddr} ${bootdir}/${fdtfile}\0" \
+	"usbboot=mmc dev ${mmcdev}; " \
+		"if usb reset; then " \
+			"if run usbloadimage; then " \
+				"run usbloados;" \
+			"fi;" \
+			"usb stop;" \
+		"fi;\0" \
+	"netboot=echo Booting from network ...; " \
+		"setenv autoload no; " \
+		"dhcp; " \
+		"tftp ${loadaddr} ${bootfile}; " \
+		"tftp ${fdtaddr} ${fdtfile}; " \
+		"run netargs; " \
+		"bootz ${loadaddr} - ${fdtaddr}\0" \
+	"findfdt="\
+		"if test $board_name = usom_etop7xx; then " \
+			"setenv fdtfile usom_etop7xx.dtb; fi; " \
+		"if test $board_name = usom_be15a; then " \
+			"setenv fdtfile usom_be15a.dtb; fi; " \
+		"if test $board_name = usom_undefined; then " \
+			"setenv fdtfile usom_undefined.dtb; fi; \0" 
+	
 #define CONFIG_BOOTCOMMAND \
-	"mmc dev ${mmcdev};" \
-	"if mmc rescan; then " \
-		"if run loadbootscript; then " \
-		"run bootscript; " \
-		"else " \
-			"if run loadimage; then " \
-				"run mmcboot; " \
-			"else run netboot; " \
-			"fi; " \
-		"fi; " \
-	"else run netboot; fi"
+	"setenv mmcdev 0; " \
+	"run findfdt; " \
+	"echo Try booting Linux from SD-card...;" \
+	"run mmcboot;" \
+	"if test $skipbsp1 = 0; then " \
+	"echo Try booting Linux from EMMC, main BSP...;" \
+	"setenv mmcdev 1; " \
+	"setenv bootpart 1:3; " \
+	"setenv mmcroot /dev/mmcblk1p3 ro; " \
+	"run mmcboot;" \
+	"fi; " \
+	"echo Try booting Linux from USB stick...;" \
+	"run usbboot;" \
+	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv mmcdev 1; " \
+	"setenv bootpart 1:2; " \
+	"setenv mmcroot /dev/mmcblk1p2 ro; " \
+	"run mmcboot;" 
 
-#define CONFIG_ANDROID_BOOTCOMMAND "echo Android boot not yet available;" 
+#define CONFIG_SYS_ALT_BOOTCOMMAND \
+	"i2c mw 68 19 0; " \
+	"setenv mmcdev 0; " \
+	"run findfdt; " \
+	"echo Try booting Linux from SD-card...;" \
+	"run mmcboot;" \
+	"echo Try booting Linux from USB stick...;" \
+	"run usbboot;" \
+	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv mmcdev 1; " \
+	"setenv bootpart 1:2; " \
+	"setenv mmcroot /dev/mmcblk1p2 ro; " \
+	"run mmcboot;" 
+	
+#define CONFIG_ANDROID_BOOTCOMMAND "echo Android boot not yet available;\0" 
 	
 #define CONFIG_ARP_TIMEOUT     200UL
 
