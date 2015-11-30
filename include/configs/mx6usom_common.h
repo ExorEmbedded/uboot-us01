@@ -248,7 +248,7 @@
 #endif
 
 #define CONFIG_ENV_IS_IN_MMC
-#define CONFIG_ENV_OFFSET		(8 * 64 * 1024)
+#define CONFIG_ENV_OFFSET		(0 * 1024)
 
 /* DMA stuff, needed for GPMI/MXS NAND support */
 #define CONFIG_APBH_DMA
