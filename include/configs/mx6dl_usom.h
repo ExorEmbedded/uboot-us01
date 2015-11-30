@@ -14,6 +14,14 @@
 #define CONFIG_CONSOLE_DEV		"ttymxc0"
 #define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* SDHC3 */
 
+/* 
+ * Silent console option
+ */
+#define CONFIG_SILENT_CONSOLE
+#define CONFIG_SILENT_CONSOLE_UPDATE_ON_SET
+#define CONFIG_SILENT_U_BOOT_ONLY
+#define CONFIG_SYS_DEVICE_NULLDEV
+
 #include "mx6usom_common.h"
 #include <asm/imx-common/gpio.h>
 

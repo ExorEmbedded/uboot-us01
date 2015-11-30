@@ -29,6 +29,15 @@
 #include <asm/arch/imx-regs.h>
 #include <asm/imx-common/gpio.h>
 
+/* We do not want a dedicated boot sequence if booting from USB
+ */
+#undef is_boot_from_usb
+
+#define CONFIG_CMD_I2CHWCFG
+#define CONFIG_HAVEPRGUART
+#define CONFIG_SYS_I2C_EEPROM_ADDR 0x54
+#define CONFIG_SYS_I2C_ADPADD 0x56
+
 #define CONFIG_CMDLINE_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_INITRD_TAG
@@ -201,6 +210,8 @@
 		"fi; " \
 	"else run netboot; fi"
 
+#define CONFIG_ANDROID_BOOTCOMMAND "echo Android boot not yet available;" 
+	
 #define CONFIG_ARP_TIMEOUT     200UL
 
 /* Miscellaneous configurable options */

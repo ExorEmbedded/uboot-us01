@@ -79,6 +79,48 @@ DECLARE_GLOBAL_DATA_PTR;
 			PAD_CTL_SRE_FAST)
 #define GPMI_PAD_CTRL2 (GPMI_PAD_CTRL0 | GPMI_PAD_CTRL1)
 
+#define BE15A_VAL     114
+#define ETOP7XX_VAL   115
+#define RXEN0_GPIO IMX_GPIO_NR(6, 31)
+#define DXEN0_GPIO IMX_GPIO_NR(3, 14)
+#define MODE0_GPIO IMX_GPIO_NR(3, 15)
+
+void ena_rs232phy(void);
+
+/*
+ * Read I2C SEEPROM infos and set env. variables accordingly
+ */
+static int read_eeprom(void)
+{
+#if (defined(CONFIG_CMD_I2CHWCFG))  
+  extern int i2cgethwcfg (void);
+  return i2cgethwcfg();
+#endif
+  return 0;
+}
+
+/*
+ * Reads the hwcfg.txt file from USB stick (root of FATFS partition) if any, parses it
+ * and updates the environment variable accordingly.
+ * 
+ * NOTE: This function is used in case the I2C SEEPROM contents are not valid, in order to get
+ *       a temporary and volatile HW configuration from USB to boot properly Linux (even if the I2C SEEPROM is not programmed) 
+ */
+static int USBgethwcfg(void)
+{
+  
+  printf("Trying to get the HW cfg from USB stick...\n");
+  
+  run_command("usb stop", 0);
+  run_command("usb reset", 0);
+  run_command("setenv filesize 0", 0);
+  run_command("fatload usb 0 ${loadaddr} hwcfg.txt", 0);
+  run_command("env import -t ${loadaddr} ${filesize}", 0);
+  run_command("usb stop", 0);
+  
+  return 0;
+}
+
 int dram_init(void)
 {
 	gd->ram_size = ((ulong)CONFIG_DDR_MB * 1024 * 1024);
@@ -456,18 +498,77 @@ static const struct boot_mode board_boot_modes[] = {
 
 int board_late_init(void)
 {
-	int ret;
+  int ret;
+  char* tmp;
+  unsigned long hwcode;
+  unsigned long rs232phyena = 0;
+  unsigned long jumperflagsl = 0;
+
 #ifdef CONFIG_CMD_BMODE
-	add_board_boot_modes(board_boot_modes);
+  add_board_boot_modes(board_boot_modes);
 #endif
 
 #ifdef CONFIG_SYS_I2C_MXC
-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
-	ret = setup_pmic_voltages();
-	if (ret)
-		return -1;
+  setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
+  ret = setup_pmic_voltages();
+  if (ret)
+    return -1;
 #endif
-	return 0;
+		
+  /* Get the system configuration from the I2C SEEPROM */
+  if(read_eeprom())
+  {
+    ena_rs232phy();
+    printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
+    USBgethwcfg();
+  }
+  
+  /* Enable the rs232 phy based on "rs232_txen" environment variable */
+  tmp = getenv("rs232_txen");
+  if(tmp)
+  {
+    rs232phyena = (simple_strtoul (tmp, NULL, 10))&0xff;
+    if(rs232phyena != 0)
+    {
+      ena_rs232phy();
+    }
+  }
+  
+  /* Set the "board_name" env. variable according with the "hw_code" */
+  tmp = getenv("hw_code");
+  if(!tmp)
+  {
+    puts ("WARNING: 'hw_code' environment var not found!\n");
+    return 1;
+  }
+  hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
+  
+  if(hwcode==ETOP7XX_VAL)
+    setenv("board_name", "usom_etop7xx"); 
+  else if(hwcode==BE15A_VAL)
+    setenv("board_name", "usom_be15a"); 
+  else
+  {
+    puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
+    setenv("board_name", "usom_undefined");
+  }
+  
+  /* Determine which mainOS has to be booted (Android vs Linux) based on the swflag_android env. variable, taken from SEEPROM */
+  /* Override the swflag_android env. variable if $0030d8android$.bin or $0030d8linux$.bin files are found into the Linux data partition */
+  run_command("mmc dev 1", 0);
+  run_command("mmc rescan", 0);
+  run_command("if test -e mmc 1:6 /$0030d8android$.bin; then setenv swflag_android 1; fi", 0);
+  run_command("if test -e mmc 1:6 /$0030d8linux$.bin; then setenv swflag_android 0; fi", 0);
+ 
+  tmp = getenv("swflag_android");
+  if((tmp) && (tmp[0] == '1'))
+  {
+    puts ("mainOS: Android\n");
+    setenv("bootcmd", CONFIG_ANDROID_BOOTCOMMAND);
+  }
+  else
+    setenv("bootcmd", CONFIG_BOOTCOMMAND);
+  return 0;
 }
 
 
@@ -526,4 +627,33 @@ int board_ehci_hcd_init(int port)
 	}
 	return 0;
 }
+#endif
+
+#ifdef CONFIG_HAVEPRGUART
+iomux_v3_cfg_t const phyuart_pads[] = {
+	MX6_PAD_EIM_DA14__GPIO3_IO14 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_EIM_DA15__GPIO3_IO15 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_EIM_BCLK__GPIO6_IO31 | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
+void ena_rs232phy(void)
+{
+  imx_iomux_v3_setup_multiple_pads(phyuart_pads, ARRAY_SIZE(phyuart_pads));
+
+  gpio_request(RXEN0_GPIO,"");
+  gpio_direction_output(RXEN0_GPIO,1);
+  
+  gpio_request(DXEN0_GPIO,"");
+  gpio_direction_output(DXEN0_GPIO,1);
+  
+  gpio_request(MODE0_GPIO,"");
+  gpio_direction_output(MODE0_GPIO,0);
+  
+  run_command("setenv silent", 0);
+  
+  udelay(1000);
+  
+}
+#else
+void ena_rs232phy(void){}
 #endif
