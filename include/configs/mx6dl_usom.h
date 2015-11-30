@@ -14,7 +14,7 @@
 #define CONFIG_CONSOLE_DEV		"ttymxc0"
 #define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* SDHC3 */
 
-#include "mx6sabre_common.h"
+#include "mx6usom_common.h"
 #include <asm/imx-common/gpio.h>
 
 #undef CONFIG_MFG_NAND_PARTITION
@@ -22,6 +22,8 @@
 
 #undef CONFIG_SYS_USE_SPINOR
 #undef CONFIG_SYS_USE_EIMNOR
+#undef CONFIG_VIDEO
+#undef CONFIG_SPLASH_SCREEN
 
 /* USB Configs */
 #define CONFIG_CMD_USB
