@@ -352,8 +352,8 @@ static void setup_iomux_uart(void)
 #define USDHC2_CD_GPIO	IMX_GPIO_NR(1, 4)
 
 struct fsl_esdhc_cfg usdhc_cfg[2] = {
-	{USDHC4_BASE_ADDR, 0, 8},
 	{USDHC2_BASE_ADDR, 0, 4},
+	{USDHC4_BASE_ADDR, 0, 8},
 };
 
 int mmc_map_to_kernel_blk(int dev_no)
@@ -388,20 +388,20 @@ int board_mmc_init(bd_t *bis)
 	/*
 	* According to the board_mmc_init() the following map is done:
 	* (U-boot device node)    (Physical Port)
-	* mmc0                    USDHC4 (EMMC)
-	* mmc1                    USDHC2 (SD-card)
+	* mmc0                    USDHC2 (SD-card)
+	* mmc1                    USDHC4 (EMMC)
 	*/
 	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
 		switch (i) {
 		case 0:
-			imx_iomux_v3_setup_multiple_pads(usdhc4_pads, ARRAY_SIZE(usdhc4_pads));
-			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC4_CLK);
+			imx_iomux_v3_setup_multiple_pads(usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+			gpio_direction_input(USDHC2_CD_GPIO);
+			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
 			break;
 
 		case 1:
-			imx_iomux_v3_setup_multiple_pads(usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
-			gpio_direction_input(USDHC2_CD_GPIO);
-			usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+			imx_iomux_v3_setup_multiple_pads(usdhc4_pads, ARRAY_SIZE(usdhc4_pads));
+			usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC4_CLK);
 			break;
 
 		default:
