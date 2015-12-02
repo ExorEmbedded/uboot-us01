@@ -485,6 +485,7 @@ int board_init(void)
 {
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
+	gd->flags |= GD_FLG_SILENT;
 	return 0;
 }
 
@@ -503,11 +504,25 @@ int board_late_init(void)
   unsigned long hwcode;
   unsigned long rs232phyena = 0;
   unsigned long jumperflagsl = 0;
+  
+  setenv("silent", "1"); 
+  gd->flags |= GD_FLG_SILENT;
 
 #ifdef CONFIG_CMD_BMODE
   add_board_boot_modes(board_boot_modes);
 #endif
 
+  /* Enable the rs232 phy based on "rs232_txen" environment variable */
+  tmp = getenv("rs232_txen");
+  if(tmp)
+  {
+    rs232phyena = (simple_strtoul (tmp, NULL, 10))&0xff;
+    if(rs232phyena != 0)
+    {
+      ena_rs232phy();
+    }
+  }
+  
 #ifdef CONFIG_SYS_I2C_MXC
   setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
   ret = setup_pmic_voltages();
@@ -521,17 +536,6 @@ int board_late_init(void)
     ena_rs232phy();
     printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
     USBgethwcfg();
-  }
-  
-  /* Enable the rs232 phy based on "rs232_txen" environment variable */
-  tmp = getenv("rs232_txen");
-  if(tmp)
-  {
-    rs232phyena = (simple_strtoul (tmp, NULL, 10))&0xff;
-    if(rs232phyena != 0)
-    {
-      ena_rs232phy();
-    }
   }
   
   /* Set the "board_name" env. variable according with the "hw_code" */
@@ -650,9 +654,8 @@ void ena_rs232phy(void)
   gpio_direction_output(MODE0_GPIO,0);
   
   run_command("setenv silent", 0);
-  
+  gd->flags &= ~GD_FLG_SILENT;
   udelay(1000);
-  
 }
 #else
 void ena_rs232phy(void){}
