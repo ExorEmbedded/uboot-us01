@@ -332,6 +332,12 @@ int board_late_init(void)
   
   if(hwcode==PLCM07_VAL)
     enable_rmii2_pin_mux();
+
+  /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
+  run_command("setenv skipbsp1 0", 0);
+  run_command("mmc dev 0", 0);
+  run_command("mmc rescan", 0);
+  run_command("if test -e mmc 0:1 /$0030d8$.bin; then setenv skipbsp1 1; fi", 0);
   
   /* Determine which mainOS has to be booted (Android vs Linux) based on the swflag_android env. variable, taken from SEEPROM */
   /* Override the swflag_android env. variable if $0030d8android$.bin or $0030d8linux$.bin files are found into the Linux data partition */
