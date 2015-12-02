@@ -349,4 +349,13 @@
 #include "mx6sabreandroid_common.h"
 #endif
 
+/* Bootcounter using the M41T83 I2C RTC NVRAM */
+#define CONFIG_BOOTCOUNT_LIMIT
+#define CONFIG_BOOTCOUNT_I2C
+#define CONFIG_BOOTCOUNT_ALEN 1
+#define CONFIG_SYS_I2C_RTC_ADDR 0x68
+#undef  CONFIG_SYS_BOOTCOUNT_ADDR
+#define CONFIG_SYS_BOOTCOUNT_ADDR 0x19
+
+
 #endif                         /* __MX6USOMUS03_COMMON_CONFIG_H */
