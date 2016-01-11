@@ -85,7 +85,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DXEN0_GPIO IMX_GPIO_NR(3, 14)
 #define MODE0_GPIO IMX_GPIO_NR(3, 15)
 
+#define WDOG1WRSRREG (0x20bc004)
+#define SNVSLPCRREG  (0x20cc038)
+
 void ena_rs232phy(void);
+static void check_wdog1_or_sw_reset(void);
 
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
@@ -97,6 +101,29 @@ static int read_eeprom(void)
   return i2cgethwcfg();
 #endif
   return 0;
+}
+
+/*
+ * Check if the system has restarted due to watchdog or sw reset; in such a case toggle the PMIC_ON_REQ in order to perfrom
+ * a clean power cycle (POR).
+ * This is the only way to be sure the CPU and PMIC are in a well known reset state.
+ */
+static void check_wdog1_or_sw_reset(void)
+{
+  u16 cause;
+  cause = __raw_readw(WDOG1WRSRREG);
+  
+  if((cause & 0x03) !=0 )
+  {
+    //WE are here due to a SW or WDT reset ... need a clean POR sequence through the PMIC_ON_REQ pin. 
+    u32 val;
+    printf("SW or WDT reset detected, performing POR...\n");
+    mdelay (10);
+    val = __raw_readl(SNVSLPCRREG);
+    val |= 0x60;
+    __raw_writel(val, SNVSLPCRREG);
+    while(1); //Wait for POR to occur
+  }
 }
 
 /*
@@ -522,6 +549,9 @@ int board_late_init(void)
       ena_rs232phy();
     }
   }
+  
+  /* Check the reset cause and perform required actions */
+  check_wdog1_or_sw_reset();
   
 #ifdef CONFIG_SYS_I2C_MXC
   setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
