@@ -163,6 +163,9 @@ iomux_v3_cfg_t const uart4_pads[] = {
 iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_SD3_DAT6__UART1_RX_DATA | MUX_PAD_CTRL(UART_PAD_CTRL),
 	MX6_PAD_SD3_DAT7__UART1_TX_DATA | MUX_PAD_CTRL(UART_PAD_CTRL),
+	MX6_PAD_EIM_DA14__GPIO3_IO14 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_EIM_DA15__GPIO3_IO15 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_EIM_BCLK__GPIO6_IO31 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 iomux_v3_cfg_t const enet_pads[] = {
@@ -670,16 +673,8 @@ int board_ehci_hcd_init(int port)
 #endif
 
 #ifdef CONFIG_HAVEPRGUART
-iomux_v3_cfg_t const phyuart_pads[] = {
-	MX6_PAD_EIM_DA14__GPIO3_IO14 | MUX_PAD_CTRL(NO_PAD_CTRL),
-	MX6_PAD_EIM_DA15__GPIO3_IO15 | MUX_PAD_CTRL(NO_PAD_CTRL),
-	MX6_PAD_EIM_BCLK__GPIO6_IO31 | MUX_PAD_CTRL(NO_PAD_CTRL),
-};
-
 void ena_rs232phy(void)
 {
-  imx_iomux_v3_setup_multiple_pads(phyuart_pads, ARRAY_SIZE(phyuart_pads));
-
   gpio_request(RXEN0_GPIO,"");
   gpio_direction_output(RXEN0_GPIO,1);
   
