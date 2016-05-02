@@ -81,6 +81,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define BE15A_VAL     114
 #define ETOP7XX_VAL   115
+#define ETOP7XXQ_VAL  117
 #define RXEN0_GPIO IMX_GPIO_NR(6, 31)
 #define DXEN0_GPIO IMX_GPIO_NR(3, 14)
 #define MODE0_GPIO IMX_GPIO_NR(3, 15)
@@ -584,6 +585,8 @@ int board_late_init(void)
     setenv("board_name", "usom_etop7xx"); 
   else if(hwcode==BE15A_VAL)
     setenv("board_name", "usom_be15a"); 
+  else if(hwcode==ETOP7XXQ_VAL)
+    setenv("board_name", "usom_etop7xxq"); 
   else
   {
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");

@@ -231,6 +231,8 @@
 	"findfdt="\
 		"if test $board_name = usom_etop7xx; then " \
 			"setenv fdtfile usom_etop7xx.dtb; fi; " \
+		"if test $board_name = usom_etop7xxq; then " \
+			"setenv fdtfile usom_etop7xxq.dtb; fi; " \
 		"if test $board_name = usom_be15a; then " \
 			"setenv fdtfile usom_be15a.dtb; fi; " \
 		"if test $board_name = usom_undefined; then " \
