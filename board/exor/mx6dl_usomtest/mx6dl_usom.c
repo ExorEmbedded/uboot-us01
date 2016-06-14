@@ -1,5 +1,5 @@
 /*
- * Board functions for US03 imx6
+ * Board functions for US03 imx6 test system
  * Copyright (C) 2016 Exor S.p.a.
  * 
  * Author: Giovanni Pavoni Exor S.p.a.
@@ -95,9 +95,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define WDOG1WRSRREG (0x20bc004)
 #define SNVSLPCRREG  (0x20cc038)
 
-void ena_rs232phy(void);
-static void check_wdog1_or_sw_reset(void);
-
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
  */
@@ -108,29 +105,6 @@ static int read_eeprom(void)
   return i2cgethwcfg();
 #endif
   return 0;
-}
-
-/*
- * Check if the system has restarted due to watchdog or sw reset; in such a case toggle the PMIC_ON_REQ in order to perfrom
- * a clean power cycle (POR).
- * This is the only way to be sure the CPU and PMIC are in a well known reset state.
- */
-static void check_wdog1_or_sw_reset(void)
-{
-  u16 cause;
-  cause = __raw_readw(WDOG1WRSRREG);
-  
-  if((cause & 0x03) !=0 )
-  {
-    //WE are here due to a SW or WDT reset ... need a clean POR sequence through the PMIC_ON_REQ pin. 
-    u32 val;
-    printf("SW or WDT reset detected, performing POR...\n");
-    mdelay (10);
-    val = __raw_readl(SNVSLPCRREG);
-    val |= 0x60;
-    __raw_writel(val, SNVSLPCRREG);
-    while(1); //Wait for POR to occur
-  }
 }
 
 /*
@@ -456,42 +430,6 @@ int board_mmc_init(bd_t *bis)
 
 #endif /* CONFIG_FSL_ESDHC */
 
-
-
-int mx6_rgmii_rework(struct phy_device *phydev)
-{
-	unsigned short val;
-
-	/* To enable AR8031 ouput a 125MHz clk from CLK_25M */
-	phy_write(phydev, MDIO_DEVAD_NONE, 0xd, 0x7);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0xe, 0x8016);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0xd, 0x4007);
-
-	val = phy_read(phydev, MDIO_DEVAD_NONE, 0xe);
-	val &= 0xffe3;
-	val |= 0x18;
-	phy_write(phydev, MDIO_DEVAD_NONE, 0xe, val);
-
-	/* introduce tx clock delay */
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x5);
-	val = phy_read(phydev, MDIO_DEVAD_NONE, 0x1e);
-	val |= 0x0100;
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, val);
-
-	return 0;
-}
-
-int board_phy_config(struct phy_device *phydev)
-{
-	mx6_rgmii_rework(phydev);
-
-	if (phydev->drv->config)
-		phydev->drv->config(phydev);
-
-	return 0;
-}
-
-
 /*
  * Do not overwrite the console
  * Use always serial for U-Boot console
@@ -499,12 +437,6 @@ int board_phy_config(struct phy_device *phydev)
 int overwrite_console(void)
 {
 	return 1;
-}
-
-int board_eth_init(bd_t *bis)
-{
-	setup_iomux_enet();
-	return cpu_eth_init(bis);
 }
 
 u32 get_board_rev(void)
@@ -539,30 +471,11 @@ int board_late_init(void)
   int ret;
   char* tmp;
   unsigned long hwcode;
-  unsigned long rs232phyena = 0;
-  unsigned long jumperflagsl = 0;
-  
-  setenv("silent", "1"); 
-  gd->flags |= GD_FLG_SILENT;
 
 #ifdef CONFIG_CMD_BMODE
   add_board_boot_modes(board_boot_modes);
 #endif
 
-  /* Enable the rs232 phy based on "rs232_txen" environment variable */
-  tmp = getenv("rs232_txen");
-  if(tmp)
-  {
-    rs232phyena = (simple_strtoul (tmp, NULL, 10))&0xff;
-    if(rs232phyena != 0)
-    {
-      ena_rs232phy();
-    }
-  }
-  
-  /* Check the reset cause and perform required actions */
-  check_wdog1_or_sw_reset();
-  
 #ifdef CONFIG_SYS_I2C_MXC
   setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
   ret = setup_pmic_voltages();
@@ -573,7 +486,6 @@ int board_late_init(void)
   /* Get the system configuration from the I2C SEEPROM */
   if(read_eeprom())
   {
-    ena_rs232phy();
     printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
     USBgethwcfg();
   }
@@ -599,27 +511,7 @@ int board_late_init(void)
     setenv("board_name", "usom_undefined");
   }
   
-  /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
-  run_command("setenv skipbsp1 0", 0);
-  run_command("mmc dev 0", 0);
-  run_command("mmc rescan", 0);
-  run_command("if test -e mmc 0:1 /$0030d8$.bin; then setenv skipbsp1 1; fi", 0);
-    
-  /* Determine which mainOS has to be booted (Android vs Linux) based on the swflag_android env. variable, taken from SEEPROM */
-  /* Override the swflag_android env. variable if $0030d8android$.bin or $0030d8linux$.bin files are found into the Linux data partition */
-  run_command("mmc dev 1", 0);
-  run_command("mmc rescan", 0);
-  run_command("if test -e mmc 1:6 /$0030d8android$.bin; then setenv swflag_android 1; fi", 0);
-  run_command("if test -e mmc 1:6 /$0030d8linux$.bin; then setenv swflag_android 0; fi", 0);
- 
-  tmp = getenv("swflag_android");
-  if((tmp) && (tmp[0] == '1'))
-  {
-    puts ("mainOS: Android\n");
-    setenv("bootcmd", CONFIG_ANDROID_BOOTCOMMAND);
-  }
-  else
-    setenv("bootcmd", CONFIG_BOOTCOMMAND);
+  setenv("bootcmd", "");
   return 0;
 }
 
@@ -681,22 +573,3 @@ int board_ehci_hcd_init(int port)
 }
 #endif
 
-#ifdef CONFIG_HAVEPRGUART
-void ena_rs232phy(void)
-{
-  gpio_request(RXEN0_GPIO,"");
-  gpio_direction_output(RXEN0_GPIO,1);
-  
-  gpio_request(DXEN0_GPIO,"");
-  gpio_direction_output(DXEN0_GPIO,1);
-  
-  gpio_request(MODE0_GPIO,"");
-  gpio_direction_output(MODE0_GPIO,0);
-  
-  run_command("setenv silent", 0);
-  gd->flags &= ~GD_FLG_SILENT;
-  udelay(1000);
-}
-#else
-void ena_rs232phy(void){}
-#endif
