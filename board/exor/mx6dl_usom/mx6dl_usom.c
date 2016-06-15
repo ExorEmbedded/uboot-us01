@@ -88,6 +88,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define BE15A_VAL     114
 #define ETOP7XX_VAL   115
 #define ETOP7XXQ_VAL  118
+#define US03KITQ_VAL  119
 #define RXEN0_GPIO IMX_GPIO_NR(6, 31)
 #define DXEN0_GPIO IMX_GPIO_NR(3, 14)
 #define MODE0_GPIO IMX_GPIO_NR(3, 15)
@@ -538,7 +539,7 @@ int board_late_init(void)
 {
   int ret;
   char* tmp;
-  unsigned long hwcode;
+  unsigned long hwcode = 0;
   unsigned long rs232phyena = 0;
   unsigned long jumperflagsl = 0;
   
@@ -583,7 +584,7 @@ int board_late_init(void)
   if(!tmp)
   {
     puts ("WARNING: 'hw_code' environment var not found!\n");
-    return 1;
+    // return 1;
   }
   hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
   
@@ -593,6 +594,8 @@ int board_late_init(void)
     setenv("board_name", "usom_be15a"); 
   else if(hwcode==ETOP7XXQ_VAL)
     setenv("board_name", "usom_etop7xxq"); 
+  else if(hwcode==US03KITQ_VAL)
+    setenv("board_name", "usom_evkitq"); 
   else
   {
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
