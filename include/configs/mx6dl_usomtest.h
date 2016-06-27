@@ -31,6 +31,7 @@
 #undef CONFIG_HAVEPRGUART
 #undef CONFIG_ENV_IS_IN_MMC
 #define CONFIG_ENV_IS_NOWHERE
+#define CONFIG_CMD_GPIO
 
 /* USB Configs */
 #define CONFIG_CMD_USB

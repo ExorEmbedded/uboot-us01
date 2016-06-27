@@ -96,6 +96,95 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SNVSLPCRREG  (0x20cc038)
 
 /*
+ * Perform FRAM Test via SPI bitbang.
+ * Test result is given by setting the framok env. variable: framok=ok.
+ */
+static void FRAM_test(void)
+{
+#define SPI1_CLK  (IMX_GPIO_NR(3, 16))
+#define SPI1_SOMI (IMX_GPIO_NR(3, 17))
+#define SPI1_SIMO (IMX_GPIO_NR(3, 18))
+#define SPI1_CSFR (IMX_GPIO_NR(4, 12))
+
+  unsigned char in = 0x9f;
+  unsigned char out=0;
+  int i;
+
+  gpio_direction_output(SPI1_CLK, 0);
+  gpio_direction_output(SPI1_SIMO, 0);
+  gpio_direction_output(SPI1_CSFR, 1);
+  gpio_direction_input(SPI1_SOMI);
+  mdelay(20);
+  
+  //1) Send WREN command (0x06)
+  in = 0x06;
+  run_command("gpio clear 108", 0);
+  mdelay(1);
+
+   //Write cmd
+  for(i=0; i< 8; i++)
+  {
+    if(in & 0x80)
+      gpio_set_value(SPI1_SIMO, 1);
+    else
+     gpio_set_value(SPI1_SIMO, 0);
+    
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 1);
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 0);
+    in = in << 1;
+  }
+
+  mdelay(1);
+  run_command("gpio set 108", 0);
+  mdelay(10);
+  
+  //RDSR command (read status register)
+  in = 0x05;
+  run_command("gpio clear 108", 0);
+  mdelay(1);
+  
+  //Write data
+  for(i=0; i< 8; i++)
+  {
+    if(in & 0x80)
+      gpio_set_value(SPI1_SIMO, 1);
+    else
+     gpio_set_value(SPI1_SIMO, 0);
+    
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 1);
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 0);
+    in = in << 1;
+  }
+  
+  //Read data
+  for(i=0; i< 8; i++)
+  {
+    out = out << 1;
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 1);
+    if(gpio_get_value(SPI1_SOMI))
+      out |= 0x01;
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 0);
+  } 
+  
+  mdelay(1);
+  run_command("gpio set 108", 0);
+  mdelay(1);
+  
+  //Set the framok env. var occording with the test result
+  if((out != 0xff) && (out & 0x02))
+    run_command("setenv framok ok", 0);
+  else
+    run_command("setenv framok", 0);
+}
+
+
+/*
  * Read I2C SEEPROM infos and set env. variables accordingly
  */
 static int read_eeprom(void)
@@ -329,6 +418,8 @@ iomux_v3_cfg_t const gpio_pads_iomux[] = {
   MX6_PAD_EIM_D18__GPIO3_IO18 | MUX_PAD_CTRL(NO_PAD_CTRL), //L22
   MX6_PAD_GPIO_0__GPIO1_IO00 | MUX_PAD_CTRL(NO_PAD_CTRL), //L23
   MX6_PAD_EIM_DA9__GPIO3_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL), //L35
+  
+  MX6_PAD_KEY_COL3__GPIO4_IO12 | MUX_PAD_CTRL(NO_PAD_CTRL), //SPI FRAM CS
 };
 
 #ifdef CONFIG_SYS_I2C_MXC
@@ -634,6 +725,7 @@ int board_late_init(void)
   setenv("bootcmd", "");
   
   setup_iomux_gpio();
+  FRAM_test();
   
   return 0;
 }
