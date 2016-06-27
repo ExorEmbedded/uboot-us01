@@ -706,7 +706,7 @@ int board_late_init(void)
   if(!tmp)
   {
     puts ("WARNING: 'hw_code' environment var not found!\n");
-    return 1;
+    // return 1;
   }
   hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
   
@@ -740,7 +740,7 @@ int checkboard(void)
 
 #ifdef CONFIG_IMX_UDC
 iomux_v3_cfg_t const otg_udc_pads[] = {
-	(MX6_PAD_ENET_RX_ER__USB_OTG_ID | MUX_PAD_CTRL(NO_PAD_CTRL)),
+	(MX6_PAD_ENET_RX_ER__GPIO1_IO24 | MUX_PAD_CTRL(NO_PAD_CTRL)),
 };
 void udc_pins_setting(void)
 {
@@ -754,7 +754,7 @@ void udc_pins_setting(void)
 
 #ifdef CONFIG_USB_EHCI_MX6
 iomux_v3_cfg_t const usb_otg_pads[] = {
-	MX6_PAD_ENET_RX_ER__USB_OTG_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_ENET_RX_ER__GPIO1_IO24 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 iomux_v3_cfg_t const usb_pads[] = {
