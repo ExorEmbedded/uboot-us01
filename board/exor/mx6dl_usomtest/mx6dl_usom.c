@@ -95,17 +95,18 @@ DECLARE_GLOBAL_DATA_PTR;
 #define WDOG1WRSRREG (0x20bc004)
 #define SNVSLPCRREG  (0x20cc038)
 
+#define SPI1_CLK  (IMX_GPIO_NR(3, 16))
+#define SPI1_SOMI (IMX_GPIO_NR(3, 17))
+#define SPI1_SIMO (IMX_GPIO_NR(3, 18))
+#define SPI1_CSFR (IMX_GPIO_NR(4, 12))
+#define SPI1_CSAD (IMX_GPIO_NR(4, 11))
+
 /*
  * Perform FRAM Test via SPI bitbang.
  * Test result is given by setting the framok env. variable: framok=ok.
  */
 static void FRAM_test(void)
 {
-#define SPI1_CLK  (IMX_GPIO_NR(3, 16))
-#define SPI1_SOMI (IMX_GPIO_NR(3, 17))
-#define SPI1_SIMO (IMX_GPIO_NR(3, 18))
-#define SPI1_CSFR (IMX_GPIO_NR(4, 12))
-
   unsigned char in = 0x9f;
   unsigned char out=0;
   int i;
@@ -181,6 +182,70 @@ static void FRAM_test(void)
     run_command("setenv framok ok", 0);
   else
     run_command("setenv framok", 0);
+}
+
+
+/*
+ * Perform MCP3204 Test via SPI bitbang (just check the chip presence).
+ * Test result is given by setting the mcp3204ok env. variable: mcp3204ok=ok.
+ */
+static void mcp3204_test(void)
+{
+  unsigned char in;
+  unsigned short out=0;
+  int i;
+
+  gpio_direction_output(SPI1_CLK, 0);
+  gpio_direction_output(SPI1_SIMO, 0);
+  gpio_direction_output(SPI1_CSFR, 1);
+  gpio_direction_output(SPI1_CSAD, 1);
+  gpio_direction_input(SPI1_SOMI);
+  mdelay(20);
+  
+  //1) Send Read command on channel 0
+  in = 0x06;
+  run_command("gpio clear 107", 0);
+  mdelay(1);
+
+   //Write cmd
+  for(i=0; i< 8; i++)
+  {
+    if(in & 0x80)
+      gpio_set_value(SPI1_SIMO, 1);
+    else
+     gpio_set_value(SPI1_SIMO, 0);
+    
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 1);
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 0);
+    in = in << 1;
+  }
+
+  //Read data
+  for(i=0; i< 16; i++)
+  {
+    out = out << 1;
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 1);
+    if(gpio_get_value(SPI1_SOMI))
+      out |= 0x01;
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 0);
+  } 
+  
+  mdelay(1);
+  run_command("gpio set 107", 0);
+  mdelay(1);
+  
+  printf("mcp3204 out=%d\n",out);
+  
+  //Set the mcp3204ok env. var occording with the test result
+  out = out & 0xfff;
+  if((out != 0) && (out != 0xfff))
+    run_command("setenv mcp3204ok ok", 0);
+  else
+    run_command("setenv mcp3204ok", 0);
 }
 
 
@@ -420,6 +485,7 @@ iomux_v3_cfg_t const gpio_pads_iomux[] = {
   MX6_PAD_EIM_DA9__GPIO3_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL), //L35
   
   MX6_PAD_KEY_COL3__GPIO4_IO12 | MUX_PAD_CTRL(NO_PAD_CTRL), //SPI FRAM CS
+  MX6_PAD_KEY_ROW2__GPIO4_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL), //SPI AD MCP3204 CS
 };
 
 #ifdef CONFIG_SYS_I2C_MXC
@@ -726,6 +792,7 @@ int board_late_init(void)
   
   setup_iomux_gpio();
   FRAM_test();
+  mcp3204_test();
   
   return 0;
 }
