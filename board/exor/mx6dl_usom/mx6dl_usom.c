@@ -89,6 +89,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ETOP7XX_VAL   115
 #define ETOP7XXQ_VAL  118
 #define US03KITQ_VAL  119
+#define JSMART_VAL    124
+#define JSMARTQ_VAL   125
+
 #define RXEN0_GPIO IMX_GPIO_NR(6, 31)
 #define DXEN0_GPIO IMX_GPIO_NR(3, 14)
 #define MODE0_GPIO IMX_GPIO_NR(3, 15)
@@ -596,6 +599,10 @@ int board_late_init(void)
     setenv("board_name", "usom_etop7xxq"); 
   else if(hwcode==US03KITQ_VAL)
     setenv("board_name", "usom_evkitq"); 
+  else if(hwcode==JSMART_VAL)
+    setenv("board_name", "usom_jsmart"); 
+  else if(hwcode==JSMARTQ_VAL)
+    setenv("board_name", "usom_jsmartq"); 
   else
   {
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
@@ -650,7 +657,9 @@ void udc_pins_setting(void)
 
 #ifdef CONFIG_USB_EHCI_MX6
 iomux_v3_cfg_t const usb_otg_pads[] = {
-	MX6_PAD_ENET_RX_ER__USB_OTG_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
+	(MX6_PAD_GPIO_1__USB_OTG_ID | MUX_PAD_CTRL(NO_PAD_CTRL)),
+	(MX6_PAD_EIM_D21__USB_OTG_OC | MUX_PAD_CTRL(NO_PAD_CTRL)),
+	(MX6_PAD_EIM_D22__USB_OTG_PWR | MUX_PAD_CTRL(UART_PAD_CTRL)),
 };
 
 iomux_v3_cfg_t const usb_pads[] = {

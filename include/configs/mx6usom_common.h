@@ -237,6 +237,10 @@
 			"setenv fdtfile usom_etop7xxq.dtb; fi; " \
 		"if test $board_name = usom_be15a; then " \
 			"setenv fdtfile usom_be15a.dtb; fi; " \
+		"if test $board_name = usom_jsmart; then " \
+			"setenv fdtfile usom_jsmart.dtb; fi; " \
+		"if test $board_name = usom_jsmartq; then " \
+			"setenv fdtfile usom_jsmartq.dtb; fi; " \
 		"if test $board_name = usom_undefined; then " \
 			"setenv fdtfile usom_undefined.dtb; fi; \0" 
 	
