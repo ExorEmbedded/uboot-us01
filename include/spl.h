@@ -29,6 +29,11 @@ struct spl_image_info {
 
 #define SPL_COPY_PAYLOAD_ONLY	1
 
+#ifdef CONFIG_SILENT_CONSOLE
+  #define printf(...)
+  #define puts(...)
+#endif
+
 extern struct spl_image_info spl_image;
 
 /* SPL common functions */

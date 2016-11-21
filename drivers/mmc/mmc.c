@@ -1277,8 +1277,10 @@ int mmc_start_init(struct mmc *mmc)
 		err = mmc_send_op_cond(mmc);
 
 		if (err && err != IN_PROGRESS) {
-#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
+#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT) 
+  #ifndef CONFIG_SILENT_CONSOLE
 			printf("Card did not respond to voltage select!\n");
+  #endif
 #endif
 			return UNUSABLE_ERR;
 		}
