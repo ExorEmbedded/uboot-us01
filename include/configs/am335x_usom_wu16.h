@@ -69,7 +69,7 @@
 	"bootdir=/boot\0" \
 	"bootfile=zImage\0" \
 	"fdtfile=usom_undefined.dtb\0" \
-	"fastboot=y\0" \
+	"fastboot=n\0" \
 	"silent=1\0" \
 	"console=/dev/null\0" \
 	"rs232_txen=0\0" \
