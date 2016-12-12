@@ -83,6 +83,8 @@
 #define AUXMACID4_POS                   59
 #define AUXMACID5_POS                   60
 
+#define THIRDMACID_POS                  41
+
 /*=======================================================================
  * I2C pre-defined / fixed values
  *======================================================================= */
@@ -306,6 +308,9 @@ int i2cgethwcfg (void)
 
   /* get 2nd eth mac ID */
   eth_setenv_enetaddr("eth1addr", &(buf[AUXMACID0_POS]));
+
+  /* get 3rd eth mac ID */
+  eth_setenv_enetaddr("eth2addr", &(buf[THIRDMACID_POS]));
   
   /* get the swflag_android from the SWModuleFlagArea */
   if(getBitInSWModuleFlagArea(ANDROID_BIT_POS))
@@ -408,6 +413,17 @@ int do_i2csavehw ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	puts ("WARNING: 'eth1addr' environment var not found ... skipped\n");
   }
 
+  /* 3rd Eth mac address handling */
+  if (eth_getenv_enetaddr("eth2addr", hw_addr))
+  {
+	buf[THIRDMACID_POS + 0] = hw_addr[0];
+	buf[THIRDMACID_POS + 1] = hw_addr[1];
+	buf[THIRDMACID_POS + 2] = hw_addr[2];
+	buf[THIRDMACID_POS + 3] = hw_addr[3];
+	buf[THIRDMACID_POS + 4] = hw_addr[4];
+	buf[THIRDMACID_POS + 5] = hw_addr[5];
+  }
+  
   /* hw_code handling */
   tmp = getenv("hw_code");
   if(!tmp)

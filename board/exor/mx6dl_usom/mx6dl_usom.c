@@ -590,7 +590,16 @@ int board_late_init(void)
     puts ("WARNING: 'hw_code' environment var not found!\n");
     // return 1;
   }
-  hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
+  else
+    hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
+  
+  /* For eTOP7xxL panels, pass the mac addresses for the additional PCIe eth ports via cmdline */
+  if((hwcode==ETOP7XX_VAL) || (hwcode==ETOP7XXQ_VAL))
+  {
+    if(getenv("eth1addr"))
+      if(getenv("eth2addr"))
+	run_command("setenv optargs pcie_tse1addr=${eth1addr} pcie_tse2addr=${eth2addr}", 0);
+  }
   
   if(hwcode==ETOP7XX_VAL)
     setenv("board_name", "usom_etop7xx"); 
