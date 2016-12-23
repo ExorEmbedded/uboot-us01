@@ -583,7 +583,14 @@ int board_late_init(void)
     printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
     USBgethwcfg();
   }
-  
+
+  tmp = getenv("fastboot");
+  if(tmp)
+  {
+    setenv("board_name", "usom_wu16");
+    setenv("bootcmd", CONFIG_BOOTCOMMAND_FAST);
+  }
+
   /* Set the "board_name" env. variable according with the "hw_code" */
   tmp = getenv("hw_code");
   if(!tmp)
