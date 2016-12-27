@@ -343,6 +343,13 @@ static int setup_pmic_voltages(void)
 			printf("Set SW1ABSTBY error!\n");
 			return -1;
 		}
+		
+		/* Set LPDDR2 voltage to 1.25V nominal */
+		value = 0x22;
+		if (i2c_write(0x8, 0x3c, 1, &value, 1)) {
+			printf("Set LPDDR2 voltage error!\n");
+			return -1;
+		}
 	}
 
 	return 0;
