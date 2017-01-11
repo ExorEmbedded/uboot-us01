@@ -320,7 +320,7 @@ int board_late_init(void)
     setenv("board_name", "usom_eco"); 
   else if(hwcode==PLCM07_VAL)
     setenv("board_name", "usom_plcm07"); 
-  else if(hwcode==ETOP705_VAL)
+  else if((hwcode==ETOP705_VAL) || (hwcode==EXWARE_VAL))
     setenv("board_name", "usom_etop705"); 
   else
   {
@@ -335,7 +335,7 @@ int board_late_init(void)
   if(hwcode==PLCM07_VAL)
     enable_rmii2_pin_mux();
 
-  if(hwcode==ETOP705_VAL)
+  if((hwcode==ETOP705_VAL) || (hwcode==EXWARE_VAL))
     enable_rmii2_pin_mux();
   
   /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */

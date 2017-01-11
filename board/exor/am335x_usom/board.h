@@ -22,6 +22,7 @@
 #define ECO_VAL      110
 #define PLCM07_VAL   111
 #define ETOP705_VAL  120
+#define EXWARE_VAL   127
 
 /* System GPIOs */
 #define RXEN0_GPIO 37
