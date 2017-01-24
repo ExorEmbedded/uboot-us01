@@ -83,7 +83,7 @@
 #define AUXMACID4_POS                   59
 #define AUXMACID5_POS                   60
 
-#define THIRDMACID_POS                  41
+#define THIRDMACID_POS                  49
 
 /*=======================================================================
  * I2C pre-defined / fixed values
