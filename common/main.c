@@ -207,12 +207,15 @@ static int abortboot_normal(int bootdelay)
 	 * Check if key already pressed
 	 * Don't check if bootdelay < 0
 	 */
-	if (bootdelay >= 0) {
-		if (ctrlc()) {	/* we got a key press	*/
-			//(void) getc();  /* consume input	*/
-			puts ("\b\b\b 0");
-			abort = 1;	/* don't auto boot	*/
-		}
+	if (bootdelay >= 0) 
+	{
+	  if (ctrlc())
+	    if (ctrlc()) 
+	    {
+		//(void) getc();  /* consume input	*/
+		puts ("\b\b\b 0");
+		abort = 1;	/* don't auto boot	*/
+	    }
 	}
 #endif
 
@@ -221,7 +224,9 @@ static int abortboot_normal(int bootdelay)
 		/* delay 1000 ms */
 		ts = get_timer(0);
 		do {
-			if (ctrlc()) {	/* we got a key press	*/
+			if (ctrlc())
+			  if (ctrlc())
+			{	/* we got a key press	*/
 				abort  = 1;	/* don't auto boot	*/
 				bootdelay = 0;	/* no more delay	*/
 # ifdef CONFIG_MENUKEY
