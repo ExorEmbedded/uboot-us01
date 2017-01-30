@@ -321,7 +321,9 @@ int board_late_init(void)
   else if(hwcode==PLCM07_VAL)
     setenv("board_name", "usom_plcm07"); 
   else if((hwcode==ETOP705_VAL) || (hwcode==EXWARE_VAL))
-    setenv("board_name", "usom_etop705"); 
+    setenv("board_name", "usom_etop705");
+  else if(hwcode==NA16_VAL)
+    setenv("board_name", "usom_na16");
   else
   {
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
@@ -336,6 +338,9 @@ int board_late_init(void)
     enable_rmii2_pin_mux();
 
   if((hwcode==ETOP705_VAL) || (hwcode==EXWARE_VAL))
+    enable_rmii2_pin_mux();
+
+  if(hwcode==NA16_VAL)
     enable_rmii2_pin_mux();
   
   /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
