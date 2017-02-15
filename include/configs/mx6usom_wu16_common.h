@@ -273,6 +273,7 @@
 	"echo Try booting Linux from USB stick...;" \
 	"run usbboot;" \
 	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv fastboot n; " \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
@@ -287,6 +288,7 @@
 	"echo Try booting Linux from USB stick...;" \
 	"run usbboot;" \
 	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv fastboot n; " \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
