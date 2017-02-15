@@ -67,6 +67,7 @@
 	"bootdir=/boot\0" \
 	"bootfile=zImage\0" \
 	"fdtfile=usom_undefined.dtb\0" \
+	"fastboot=n\0" \
 	"console=/dev/null\0" \
 	"rs232_txen=0\0" \
 	"optargs=\0" \
@@ -81,6 +82,7 @@
 		"${optargs} " \
 		"hw_dispid=${hw_dispid} " \
 		"hw_code=${hw_code} " \
+		"fastboot=${fastboot} " \
 		"board_name=${board_name} " \
 		"touch_type=${touch_type} " \
 		"ethaddr=${ethaddr} " \
@@ -219,6 +221,7 @@
 	"echo Try booting Linux from USB stick...;" \
 	"run usbboot;" \
 	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv fastboot n; " \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
@@ -233,6 +236,7 @@
 	"echo Try booting Linux from USB stick...;" \
 	"run usbboot;" \
 	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv fastboot n; " \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
