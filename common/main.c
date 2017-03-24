@@ -201,6 +201,8 @@ static int abortboot_normal(int bootdelay)
 	if (bootdelay >= 0)
 		printf("Hit <ctrl-c> to stop autoboot: %2d ", bootdelay);
 #endif
+	if(bootdelay==0)
+		bootdelay = 1;
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
 	/*
@@ -237,7 +239,7 @@ static int abortboot_normal(int bootdelay)
 				break;
 			}
 			udelay(10000);
-		} while (!abort && get_timer(ts) < 1000);
+		} while (!abort && get_timer(ts) < 100);
 
 		printf("\b\b\b%2d ", bootdelay);
 	}
