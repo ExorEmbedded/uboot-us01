@@ -217,7 +217,7 @@ struct i2c_pads_info i2c_pad_info2 = {
 
 static void setup_iomux_enet(void)
 {
-	//imx_iomux_v3_setup_multiple_pads(enet_pads, ARRAY_SIZE(enet_pads));
+	imx_iomux_v3_setup_multiple_pads(enet_pads, ARRAY_SIZE(enet_pads));
 }
 
 
@@ -342,6 +342,13 @@ static int setup_pmic_voltages(void)
 		value |= 0x40;
 		if (i2c_write(0x8, 0x32, 1, &value, 1)) {
 			printf("Set SW1ABSTBY error!\n");
+			return -1;
+		}
+
+		/* Set LPDDR2 voltage to 1.25V nominal */
+		value = 0x22;
+		if (i2c_write(0x8, 0x3c, 1, &value, 1)) {
+			printf("Set LPDDR2 voltage error!\n");
 			return -1;
 		}
 	}
@@ -585,10 +592,11 @@ int board_late_init(void)
   }
 
   tmp = getenv("fastboot");
-  if(tmp)
+  if('y' == tmp[0] || 'Y' == tmp[0])
   {
     setenv("board_name", "usom_wu16");
     setenv("bootcmd", CONFIG_BOOTCOMMAND_FAST);
+    return 0;
   }
 
   /* Set the "board_name" env. variable according with the "hw_code" */
@@ -598,24 +606,11 @@ int board_late_init(void)
     puts ("WARNING: 'hw_code' environment var not found!\n");
     // return 1;
   }
-  hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
+  else
+    hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
   
-  if(hwcode==ETOP7XX_VAL)
-    setenv("board_name", "usom_etop7xx"); 
-  else if(hwcode==BE15A_VAL)
-    setenv("board_name", "usom_be15a"); 
-  else if(hwcode==ETOP7XXQ_VAL)
-    setenv("board_name", "usom_etop7xxq"); 
-  else if(hwcode==US03KITQ_VAL)
-    setenv("board_name", "usom_evkitq");
-  else if(hwcode==US03WU16_VAL)
+  if(hwcode==US03WU16_VAL)
     setenv("board_name", "usom_wu16");
-  else if(hwcode==JSMART_VAL)
-    setenv("board_name", "usom_jsmart"); 
-  else if(hwcode==JSMARTQ_VAL)
-    setenv("board_name", "usom_jsmartq"); 
-  else if(hwcode==JSMARTTTL_VAL)
-    setenv("board_name", "usom_jsmartttl");
   else
   {
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");

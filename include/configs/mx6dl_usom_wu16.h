@@ -25,6 +25,8 @@
 /* 
  * #include "mx6usom_common.h"
  */
+#define CONFIG_SKIP_TEMP_CHECK
+
 #include "mx6usom_wu16_common.h"
 #include <asm/imx-common/gpio.h>
 

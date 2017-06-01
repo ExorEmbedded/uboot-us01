@@ -344,6 +344,8 @@ void check_cpu_temperature(void)
 	int cpu_tmp = 0;
 
 	cpu_tmp = read_cpu_temperature();
+#ifndef CONFIG_SKIP_TEMP_CHECK
+#warning "Hot temperature check enabled!"
 	while (cpu_tmp > TEMPERATURE_MIN && cpu_tmp < TEMPERATURE_MAX) {
 		if (cpu_tmp >= TEMPERATURE_HOT) {
 			printf("CPU is %d C, too hot to boot, waiting...\n",
@@ -353,6 +355,9 @@ void check_cpu_temperature(void)
 		} else
 			break;
 	}
+#else
+#warning "Hot temperature check skipped!"
+#endif
 	if (cpu_tmp > TEMPERATURE_MIN && cpu_tmp < TEMPERATURE_MAX)
 		printf("CPU:   Temperature %d C, calibration data: 0x%x\n",
 			cpu_tmp, fuse);
