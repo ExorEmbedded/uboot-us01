@@ -84,8 +84,9 @@
 #define CONFIG_ETHPRIME			"FEC"
 #define CONFIG_FEC_MXC_PHYADDR		1
 
-#define CONFIG_PHYLIB
-#define CONFIG_PHY_ATHEROS
+//Reduce boot time 500ms
+#undef CONFIG_PHYLIB
+#undef CONFIG_PHY_ATHEROS
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
