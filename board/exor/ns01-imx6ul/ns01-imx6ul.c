@@ -163,10 +163,15 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX6_PAD_SD1_DATA1__USDHC1_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_DATA2__USDHC1_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_DATA3__USDHC1_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_NAND_READY_B__USDHC1_DATA4 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_NAND_CE0_B__USDHC1_DATA5 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_NAND_CE1_B__USDHC1_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_NAND_CLE__USDHC1_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+};
+
+static iomux_v3_cfg_t const usdhc2_pads[] = {
+	MX6_PAD_NAND_RE_B__USDHC2_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_WE_B__USDHC2_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA00__USDHC2_DATA0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA01__USDHC2_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA02__USDHC2_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA03__USDHC2_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 };
 
 #define USB_OTHERREGS_OFFSET	0x800
@@ -186,8 +191,9 @@ static void setup_usb(void)
 	imx_iomux_v3_setup_multiple_pads(usb_otg_pad, ARRAY_SIZE(usb_otg_pad));
 }
 
-static struct fsl_esdhc_cfg usdhc_cfg[1] = {
-	{USDHC1_BASE_ADDR},
+static struct fsl_esdhc_cfg usdhc_cfg[2] = {
+	{USDHC1_BASE_ADDR, 0, 4},
+	{USDHC2_BASE_ADDR, 0, 4},
 };
 
 int board_mmc_getcd(struct mmc *mmc)
@@ -195,11 +201,29 @@ int board_mmc_getcd(struct mmc *mmc)
 	return 1;
 }
 
+/*
+ * According to the board_mmc_init() the following map is done:
+ * (U-Boot device node)    (Physical Port)
+ * mmc0                    USDHC1 (SDcard)
+ * mmc1                    USDHC2 (EMMC)
+ */
 int board_mmc_init(bd_t *bis)
 {
-	imx_iomux_v3_setup_multiple_pads(usdhc1_pads, ARRAY_SIZE(usdhc1_pads));
-	usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
-	return fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
+  int ret;
+  
+  imx_iomux_v3_setup_multiple_pads(usdhc1_pads, ARRAY_SIZE(usdhc1_pads));
+  usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
+  ret = fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
+  if(ret)
+    printf("Failed to initialize SDcard (mmc0)\n");
+  
+  imx_iomux_v3_setup_multiple_pads(usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+  usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+  ret = fsl_esdhc_initialize(bis, &usdhc_cfg[1]);
+  if(ret)
+    printf("Failed to initialize EMMC (mmc1)\n");
+  
+  return 0;
 }
 
 int board_early_init_f(void)
