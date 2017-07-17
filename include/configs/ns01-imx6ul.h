@@ -28,7 +28,7 @@
 #define CONFIG_SYS_MALLOC_LEN		(35 * SZ_1M) /* Increase due to DFU */
 
 #define CONFIG_MXC_UART
-#define CONFIG_MXC_UART_BASE		UART6_BASE_ADDR
+#define CONFIG_MXC_UART_BASE		UART1_BASE
 
 /* MMC Configs */
 #define CONFIG_FSL_USDHC
