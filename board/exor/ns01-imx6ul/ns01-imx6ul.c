@@ -265,6 +265,9 @@ int power_init_board(void)
 
 	/* SW1B standby voltage set to 0.975V */
 	pmic_reg_write(pfuze, PFUZE3000_SW1BSTBY, 0xb);
+	
+	/* 5.0V on SWBST for USB */
+	pmic_reg_write(pfuze, PFUZE3000_SWBSTCTL, 0x48);
 
 	return 0;
 }
