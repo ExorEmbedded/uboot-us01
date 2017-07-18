@@ -59,6 +59,43 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #ifdef CONFIG_SYS_I2C_MXC
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+
+#define NS01EVK_VAL    129
+
+/*
+ * Read I2C SEEPROM infos and set env. variables accordingly
+ */
+static int read_eeprom(void)
+{
+#if (defined(CONFIG_CMD_I2CHWCFG))  
+  extern int i2cgethwcfg (void);
+  return i2cgethwcfg();
+#endif
+  return 0;
+}
+
+/*
+ * Reads the hwcfg.txt file from USB stick (root of FATFS partition) if any, parses it
+ * and updates the environment variable accordingly.
+ * 
+ * NOTE: This function is used in case the I2C SEEPROM contents are not valid, in order to get
+ *       a temporary and volatile HW configuration from USB to boot properly Linux (even if the I2C SEEPROM is not programmed) 
+ */
+static int USBgethwcfg(void)
+{
+  
+  printf("Trying to get the HW cfg from USB stick...\n");
+  
+  run_command("usb stop", 0);
+  run_command("usb reset", 0);
+  run_command("setenv filesize 0", 0);
+  run_command("fatload usb 0 ${loadaddr} hwcfg.txt", 0);
+  run_command("env import -t ${loadaddr} ${filesize}", 0);
+  run_command("usb stop", 0);
+  
+  return 0;
+}
+
 /* I2C2 for PMIC */
 struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
@@ -318,3 +355,42 @@ int checkboard(void)
 
 	return 0;
 }
+
+int board_late_init(void)
+{
+  char* tmp;
+  unsigned long hwcode = 0;
+		
+  /* Get the system configuration from the I2C SEEPROM */
+  if(read_eeprom())
+  {
+    printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
+    USBgethwcfg();
+  }
+  
+  /* Set the "board_name" env. variable according with the "hw_code" */
+  tmp = getenv("hw_code");
+  if(!tmp)
+  {
+    puts ("WARNING: 'hw_code' environment var not found!\n");
+  }
+  else
+    hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
+  
+  if(hwcode==NS01EVK_VAL)
+    setenv("board_name", "ns01-evk"); 
+  else
+  {
+    puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
+    setenv("board_name", "usom_undefined");
+  }
+  
+  /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
+  run_command("setenv skipbsp1 0", 0);
+  run_command("mmc dev 0", 0);
+  run_command("mmc rescan", 0);
+  run_command("if test -e mmc 0:1 /$0030d8$.bin; then setenv skipbsp1 1; fi", 0);
+    
+  return 0;
+}
+
