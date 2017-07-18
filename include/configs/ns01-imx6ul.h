@@ -51,44 +51,55 @@
 #define DFU_DEFAULT_POLL_TIMEOUT 300
 
 #define CONFIG_SYS_MMC_IMG_LOAD_PART	1
-
+	   
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"image=zImage\0" \
-	"console=ttymxc5\0" \
+	"altbootcmd="CFG_SYS_ALT_BOOTCOMMAND"\0"\
+	"bootlimit=3\0" \
+	"fdtaddr=0x83000000\0" \
 	"fdt_high=0xffffffff\0" \
-	"initrd_high=0xffffffff\0" \
-	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
-	"fdt_addr=0x83000000\0" \
-	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
-	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
-	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
-	"mmcautodetect=yes\0" \
-	"dfu_alt_info=boot raw 0x2 0x400 mmcpart 1\0" \
-	"mmcargs=setenv bootargs console=${console},${baudrate} " \
-		"root=${mmcroot}\0" \
-	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
-	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
-	"mmcboot=echo Booting from mmc ...; " \
-		"run mmcargs; " \
-		"if run loadfdt; then " \
-			"bootz ${loadaddr} - ${fdt_addr}; " \
-		"else " \
-			"echo WARN: Cannot load the DT; " \
-		"fi;\0" \
-	"netargs=setenv bootargs console=${console},${baudrate} " \
+	"boot_fdt=yes\0" \
+	"skipbsp1=0\0" \
+	"bootpart=0:1\0" \
+	"bootdir=/boot\0" \
+	"bootfile=zImage\0" \
+	"fdtfile=usom_undefined.dtb\0" \
+	"fastboot=n\0" \
+	"console=/dev/null\0" \
+	"rs232_txen=0\0" \
+	"optargs=\0" \
+	"mmcdev=0\0" \
+	"mmcroot=/dev/mmcblk0p2 rw\0" \
+	"mmcrootfstype=ext4 rootwait\0" \
+	"rootpath=/export/rootfs\0" \
+	"nfsopts=nolock\0" \
+	"mmcargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"fastboot=${fastboot} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
+		"root=${mmcroot} " \
+		"rootfstype=${mmcrootfstype}\0" \
+	"netargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
 		"root=/dev/nfs " \
-	"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
-		"netboot=echo Booting from net ...; " \
-		"run netargs; " \
-		"if test ${ip_dyn} = yes; then " \
-			"setenv get_cmd dhcp; " \
-		"else " \
-			"setenv get_cmd tftp; " \
-		"fi; " \
-		"${get_cmd} ${image}; " \
+		"nfsroot=${serverip}:${rootpath},${nfsopts} rw " \
+		"ip=dhcp\0" \
+	"bootenv=uEnv.txt\0" \
+	"loadbootenv=load mmc ${mmcdev} ${loadaddr} ${bootenv}\0" \
+	"importbootenv=echo Importing environment from mmc ...; " \
+		"env import -t $loadaddr $filesize\0" \
+	"loadimage=load mmc ${bootpart} ${loadaddr} ${bootdir}/${bootfile}\0" \
+	"loadfdt=load mmc ${bootpart} ${fdtaddr} ${bootdir}/${fdtfile}\0" \
+	"mmcloados=run mmcargs; " \
 		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-				"bootz ${loadaddr} - ${fdt_addr}; " \
+			"if run loadfdt; then " \
+				"bootz ${loadaddr} - ${fdtaddr}; " \
 			"else " \
 				"if test ${boot_fdt} = try; then " \
 					"bootz; " \
@@ -99,15 +110,103 @@
 		"else " \
 			"bootz; " \
 		"fi;\0" \
-
+	"mmcboot=mmc dev ${mmcdev}; " \
+		"if mmc rescan; then " \
+			"echo SD/MMC found on device ${mmcdev};" \
+			"if run loadbootenv; then " \
+				"echo Loaded environment from ${bootenv};" \
+				"run importbootenv;" \
+			"fi;" \
+			"if test -n $uenvcmd; then " \
+				"echo Running uenvcmd ...;" \
+				"run uenvcmd;" \
+			"fi;" \
+			"if run loadimage; then " \
+				"run mmcloados;" \
+			"fi;" \
+		"fi;\0" \
+	"usbargs=setenv bootargs console=${console} " \
+		"${optargs} " \
+		"hw_dispid=${hw_dispid} " \
+		"hw_code=${hw_code} " \
+		"board_name=${board_name} " \
+		"touch_type=${touch_type} " \
+		"root=${usbroot} " \
+		"rootfstype=${usbrootfstype}\0" \
+	"usbroot=/dev/sda2 rw\0" \
+	"usbrootfstype=ext4 rootwait\0" \
+	"usbloados=run usbargs; " \
+		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
+			"if run usbloadfdt; then " \
+				"bootz ${loadaddr} - ${fdtaddr}; " \
+			"else " \
+				"if test ${boot_fdt} = try; then " \
+					"bootz; " \
+				"else " \
+					"echo WARN: Cannot load the DT; " \
+				"fi; " \
+			"fi; " \
+		"else " \
+			"bootz; " \
+		"fi;\0" \
+	"usbloadimage=load usb 0 ${loadaddr} ${bootdir}/${bootfile}\0" \
+	"usbloadfdt=load usb 0 ${fdtaddr} ${bootdir}/${fdtfile}\0" \
+	"usbboot=mmc dev ${mmcdev}; " \
+		"if usb reset; then " \
+			"if run usbloadimage; then " \
+				"run usbloados;" \
+			"fi;" \
+			"usb stop;" \
+		"fi;\0" \
+	"netboot=echo Booting from network ...; " \
+		"setenv autoload no; " \
+		"dhcp; " \
+		"tftp ${loadaddr} ${bootfile}; " \
+		"tftp ${fdtaddr} ${fdtfile}; " \
+		"run netargs; " \
+		"bootz ${loadaddr} - ${fdtaddr}\0" \
+	"findfdt="\
+		"if test $board_name = ns01-evk; then " \
+			"setenv fdtfile ns01-evk.dtb; fi; " \
+		"if test $board_name = usom_undefined; then " \
+			"setenv fdtfile usom_undefined.dtb; fi; \0" 
+	
 #define CONFIG_BOOTCOMMAND \
-	   "if mmc rescan; then " \
-		   "if run loadimage; then " \
-			   "run mmcboot; " \
-		   "else run netboot; " \
-		   "fi; " \
-	   "else run netboot; fi"
+	"setenv mmcdev 0; " \
+	"run findfdt; " \
+	"echo Try booting Linux from SD-card...;" \
+	"run mmcboot;" \
+	"if test $skipbsp1 = 0; then " \
+	"echo Try booting Linux from EMMC, main BSP...;" \
+	"setenv mmcdev 1; " \
+	"setenv bootpart 1:3; " \
+	"setenv mmcroot /dev/mmcblk1p3 ro; " \
+	"run mmcboot;" \
+	"fi; " \
+	"echo Try booting Linux from USB stick...;" \
+	"run usbboot;" \
+	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv fastboot n; " \
+	"setenv mmcdev 1; " \
+	"setenv bootpart 1:2; " \
+	"setenv mmcroot /dev/mmcblk1p2 ro; " \
+	"run mmcboot;" 
 
+#define CFG_SYS_ALT_BOOTCOMMAND \
+	"i2c mw 68 19 0; " \
+	"setenv mmcdev 0; " \
+	"run findfdt; " \
+	"echo Try booting Linux from SD-card...;" \
+	"run mmcboot;" \
+	"echo Try booting Linux from USB stick...;" \
+	"run usbboot;" \
+	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv fastboot n; " \
+	"setenv mmcdev 1; " \
+	"setenv bootpart 1:2; " \
+	"setenv mmcroot /dev/mmcblk1p2 ro; " \
+	"run mmcboot;" 
+	   
 #define CONFIG_SYS_MEMTEST_START	0x80000000
 #define CONFIG_SYS_MEMTEST_END		CONFIG_SYS_MEMTEST_START + SZ_128M
 
