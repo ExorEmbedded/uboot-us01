@@ -144,10 +144,10 @@
 /* environment organization */
 #define CONFIG_ENV_SIZE			SZ_8K
 #define CONFIG_ENV_IS_IN_MMC
-#define CONFIG_ENV_OFFSET		(8 * SZ_64K)
+#define CONFIG_ENV_OFFSET		(0)
 
-#define CONFIG_SYS_MMC_ENV_DEV		0
-#define CONFIG_SYS_MMC_ENV_PART		0
+#define CONFIG_SYS_MMC_ENV_DEV		1
+#define CONFIG_SYS_MMC_ENV_PART		2
 #define CONFIG_MMCROOT			"/dev/mmcblk0p2"
 
 #endif /* __NS01_IMX6UL_CONFIG_H */
