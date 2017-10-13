@@ -84,6 +84,9 @@
 #define CONFIG_ETHPRIME			"FEC"
 #define CONFIG_FEC_MXC_PHYADDR		1
 
+//Front RED LED
+//#define CONFIG_RGB_RED_LED
+
 //Reduce boot time 500ms
 #undef CONFIG_PHYLIB
 #undef CONFIG_PHY_ATHEROS

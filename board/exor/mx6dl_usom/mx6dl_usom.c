@@ -247,6 +247,30 @@ iomux_v3_cfg_t const usdhc4_pads[] = {
 
 
 #ifdef CONFIG_SYS_I2C_MXC
+
+#ifdef CONFIG_RGB_RED_LED
+#define PCA9633_I2C_ADDR	0x62
+#define PCA9633_MODE1		0x00
+#define PCA9633_MODE2		0x01
+#define PCA9633_PWM_BASE	0x02
+#define PCA9633_LEDOUT		0x08
+static void setup_red_led(void)
+{
+    unsigned char value = 0xFF;
+    i2c_set_bus_num(2);
+    if (!i2c_probe(PCA9633_I2C_ADDR)) {
+	value = 0x00;
+	i2c_write(PCA9633_I2C_ADDR, PCA9633_MODE1, 1, &value, 1);
+	value = 0x01;
+	i2c_write(PCA9633_I2C_ADDR, PCA9633_MODE2, 1, &value, 1);
+	value = 0x00;
+	i2c_write(PCA9633_I2C_ADDR, PCA9633_PWM_BASE, 1, &value, 1);
+	value = 0x01;
+	i2c_write(PCA9633_I2C_ADDR, PCA9633_LEDOUT, 1, &value, 1);
+    }
+}
+#endif
+
 /* set all switches APS in normal and PFM mode in standby */
 static int setup_pmic_mode(int chip)
 {
@@ -628,6 +652,11 @@ int board_late_init(void)
     setenv("board_name", "usom_undefined");
   }
   
+#if defined (CONFIG_SYS_I2C_MXC) && defined (CONFIG_RGB_RED_LED)
+    if(hwcode==JSMART_VAL || hwcode==JSMARTQ_VAL || hwcode==JSMARTTTL_VAL)
+	setup_red_led();
+#endif
+
   /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
   run_command("setenv skipbsp1 0", 0);
   run_command("mmc dev 0", 0);
