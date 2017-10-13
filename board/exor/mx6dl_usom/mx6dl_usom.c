@@ -254,18 +254,29 @@ iomux_v3_cfg_t const usdhc4_pads[] = {
 #define PCA9633_MODE2		0x01
 #define PCA9633_PWM_BASE	0x02
 #define PCA9633_LEDOUT		0x08
-static void setup_red_led(void)
+
+#define PCA9633_RED_ON	    0x01
+#define PCA9633_GREEN_ON	0x04
+#define PCA9633_BLUE_ON	    0x10
+#define PCA9633_UNUSED_ON	0x40
+
+#define PCA9633_RED_OFF	    0x00
+#define PCA9633_GREEN_OFF	0x00
+#define PCA9633_BLUE_OFF	0x00
+#define PCA9633_UNUSED_OFF	0x00
+static void setup_led(void)
 {
     unsigned char value = 0xFF;
     i2c_set_bus_num(2);
     if (!i2c_probe(PCA9633_I2C_ADDR)) {
+
 	value = 0x00;
 	i2c_write(PCA9633_I2C_ADDR, PCA9633_MODE1, 1, &value, 1);
+
 	value = 0x01;
 	i2c_write(PCA9633_I2C_ADDR, PCA9633_MODE2, 1, &value, 1);
-	value = 0x00;
-	i2c_write(PCA9633_I2C_ADDR, PCA9633_PWM_BASE, 1, &value, 1);
-	value = 0x01;
+
+	value = (unsigned char) PCA9633_RED_ON | PCA9633_GREEN_OFF | PCA9633_BLUE_OFF | PCA9633_UNUSED_OFF;
 	i2c_write(PCA9633_I2C_ADDR, PCA9633_LEDOUT, 1, &value, 1);
     }
 }
@@ -654,7 +665,7 @@ int board_late_init(void)
   
 #if defined (CONFIG_SYS_I2C_MXC) && defined (CONFIG_RGB_RED_LED)
     if(hwcode==JSMART_VAL || hwcode==JSMARTQ_VAL || hwcode==JSMARTTTL_VAL)
-	setup_red_led();
+	setup_led();
 #endif
 
   /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
