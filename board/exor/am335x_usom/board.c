@@ -355,7 +355,7 @@ int board_late_init(void)
   run_command("mmc rescan", 0);
   run_command("if test -e mmc 1:6 /$0030d8android$.bin; then setenv swflag_android 1; fi", 0);
   run_command("if test -e mmc 1:6 /$0030d8linux$.bin; then setenv swflag_android 0; fi", 0);
- 
+
   tmp = getenv("swflag_android");
   if((tmp) && (tmp[0] == '1'))
   {
@@ -364,6 +364,18 @@ int board_late_init(void)
   }
   else
     setenv("bootcmd", CONFIG_BOOTCOMMAND);
+
+#ifdef CONFIG_CMD_WCE
+  run_command("if test -e mmc 1:6 /$0030d8wce$.bin; then setenv swflag_wce 1; fi", 0);
+  run_command("if test -e mmc 1:6 /$0030d8linux$.bin; then setenv swflag_wce 0; fi", 0);
+  
+  tmp = getenv("swflag_wce");
+  if((tmp) && (tmp[0] == '1'))
+  {
+    puts ("mainOS: WCE\n");
+    setenv("bootcmd", CONFIG_WCE_BOOTCOMMAND);
+  }
+#endif  
   
   return 0;
 }

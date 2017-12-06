@@ -103,6 +103,7 @@
 #define SWMODULEFLAG_AREA_OFFSET 248
 #define SWMODULEFLAG_AREA_LEN    8
 #define ANDROID_BIT_POS          5
+#define WCE_BIT_POS              15
 
 /* Return the value of the specified bit (bitIndex) in the SWModuleFlag are.
  * 
@@ -321,7 +322,19 @@ int i2cgethwcfg (void)
   {
     setenv("swflag_android", "0"); 
   }
- 
+
+#ifdef CONFIG_CMD_WCE
+  /* get the swflag_wce from the SWModuleFlagArea */
+  if(getBitInSWModuleFlagArea(WCE_BIT_POS))
+  {
+    setenv("swflag_wce", "1"); 
+  }
+  else
+  {
+    setenv("swflag_wce", "0"); 
+  }
+#endif
+
   return 0;
 }
   

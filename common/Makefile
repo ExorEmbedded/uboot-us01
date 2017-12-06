@@ -246,5 +246,6 @@ obj-$(CONFIG_FIT) += image-fit.o
 obj-$(CONFIG_FIT_SIGNATURE) += image-sig.o
 obj-y += memsize.o
 obj-y += stdio.o
+obj-$(CONFIG_CMD_WCE) += cmd_bin.o
 
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)

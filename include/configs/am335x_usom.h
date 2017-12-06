@@ -261,6 +261,29 @@
 	"setenv bootpart 1:2; " \
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
 	"run mmcboot;" 
+
+/* WCE6 boot command
+ */	
+#define CONFIG_WCE_BOOTCOMMAND \
+	"setenv mmcdev 0; " \
+	"run findfdt; " \
+	"echo Try booting Linux from SD-card...;" \
+	"run mmcboot;" \
+	"if test $skipbsp1 = 0; then " \
+	"echo Try booting WCE EMMC, main BSP...;" \
+	"mmc dev 1; " \
+	"mmc rescan; " \
+	"if test -e mmc 1:7 wceimage.bin; then " \
+	"fatload mmc 1:7 80002000 wceimage.bin; " \
+	"go 0x80002000; " \
+	"fi; " \
+	"fi; " \
+	"echo Try booting Linux from EMMC, recovery BSP...;" \
+	"setenv mmcdev 1; " \
+	"setenv bootpart 1:2; " \
+	"setenv mmcroot /dev/mmcblk1p2 ro; " \
+	"run mmcboot;" 
+
 	
 /* NS16550 Configuration */
 #define CONFIG_SYS_NS16550_COM1		0x44e09000	/* Base EVM has UART0 */
@@ -342,5 +365,7 @@
 /* Exor custom features */
 #define CONFIG_CMD_I2CHWCFG
 #define CONFIG_SYS_I2C_ADPADD 0x56
+#define CONFIG_CMD_WCE
+#define CONFIG_WCE_BASE_RAM_ADDR 0x80000000
 
 #endif	/* ! __CONFIG_AM335X_EVM_H */

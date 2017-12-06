@@ -33,6 +33,9 @@ static int do_go(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	addr = simple_strtoul(argv[1], NULL, 16);
 
 	printf ("## Starting application at 0x%08lX ...\n", addr);
+#ifdef CONFIG_CMD_WCE
+	cleanup_before_linux();
+#endif
 
 	/*
 	 * pass address parameter as argv[0] (aka command name),
