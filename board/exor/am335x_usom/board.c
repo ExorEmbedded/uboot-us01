@@ -44,6 +44,10 @@ static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 static struct cpsw_slave_data cpsw_slaves[];
 
 #ifdef CONFIG_AM335X_LCD
+  #define SPLASH_HDRLEN  		56
+  #define SPLASH_STRIDE_IDX		0
+  #define SPLASH_SIZE_IDX		2
+
 static struct dpll_regs dpll_lcd_regs = {
 	.cm_clkmode_dpll = CM_WKUP + 0x98,
 	.cm_idlest_dpll = CM_WKUP + 0x48,
@@ -79,6 +83,8 @@ static int conf_disp_pll(int m, int n)
  */
 void ShowSplash(void)
 {
+  void* loadaddr = (void*)(0x80200000);
+    
   //TODO: Dynamically set the LCD panel parameters, based on hw_dispid and displayconfig.h file
   struct am335x_lcdpanel pnl;
   pnl.hactive = 800;
@@ -95,8 +101,40 @@ void ShowSplash(void)
   pnl.pon_delay = 0;
   pnl.panel_power_ctrl = NULL;
   
-  //TODO Load splashimage and show it, if valid
-    
+  // Load splashimage and show it, if valid, otherwise exit
+  memset(loadaddr, 0, SPLASH_HDRLEN);
+  run_command("mmc dev 1", 0);
+  run_command("mmc rescan", 0);
+  run_command("fatload mmc 1:8 80200000 splashimage.bin", 0);
+ 
+  {   // Only splashimages not bigger than the LCD size are allowed
+      u32  splash_width;
+      u32  splash_height;
+      u32* header = (u32*)loadaddr;
+      u32 i, h, v;
+      
+      splash_width = (header[SPLASH_STRIDE_IDX]) / 2 + 1;
+      splash_height = (((header[SPLASH_SIZE_IDX]) / 2) / splash_width);
+      
+      if((splash_width == 0) || (splash_width > pnl.hactive))
+	return;
+
+      if((splash_height == 0) || (splash_height > pnl.vactive))
+	return;
+      
+      memset((void*)CONFIG_AM335X_LCD_BASE, 0, pnl.hactive * pnl.vactive * 2);
+      
+      h = (pnl.hactive - splash_width) / 2;
+      v = (pnl.vactive - splash_height) / 2;
+     
+      for( i = 0; i < splash_height; i++)
+      { //Copy raw by raw
+        void* src = loadaddr + SPLASH_HDRLEN + i * (splash_width * 2);
+	void* dst = (void*)CONFIG_AM335X_LCD_BASE + 0x20 + h*2 + (v+i)*2*pnl.hactive;
+	memcpy(dst,src, 2*splash_width);
+      }
+   }
+  
   //Here we start LCD PLL and set LCD pinmux
   conf_disp_pll(24, 1);
   enable_lcdc_pin_mux();

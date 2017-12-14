@@ -101,7 +101,7 @@ DECLARE_GLOBAL_DATA_PTR;
 int lcd_get_size(int *line_length)
 {
 	*line_length = (panel_info.vl_col * NBITS(panel_info.vl_bpix)) / 8;
-	return *line_length * panel_info.vl_row; // + 0x20;
+	return *line_length * panel_info.vl_row + 0x20;
 }
 
 int am335xfb_init(struct am335x_lcdpanel *panel)
@@ -120,16 +120,16 @@ int am335xfb_init(struct am335x_lcdpanel *panel)
 	      (unsigned int)CONFIG_AM335X_LCD_BASE, FBSIZE(panel));
 
 	/* palette default entry */
-	//memset((void *)CONFIG_AM335X_LCD_BASE, 0, 0x20);
-	//*(unsigned int *)CONFIG_AM335X_LCD_BASE = 0x4000;
+	memset((void *)CONFIG_AM335X_LCD_BASE, 0, 0x20);
+	*(unsigned int *)CONFIG_AM335X_LCD_BASE = 0x4000;
 
 	lcdhw->clkc_enable = LCD_CORECLKEN | LCD_LIDDCLKEN | LCD_DMACLKEN;
 	lcdhw->raster_ctrl = 0;
 	lcdhw->ctrl = LCD_CLK_DIVISOR(panel->pxl_clk_div) | LCD_RASTER_MODE;
 	lcdhw->lcddma_fb0_base = CONFIG_AM335X_LCD_BASE;
-	lcdhw->lcddma_fb0_ceiling = CONFIG_AM335X_LCD_BASE + FBSIZE(panel); // + 0x20;
+	lcdhw->lcddma_fb0_ceiling = CONFIG_AM335X_LCD_BASE + FBSIZE(panel) + 0x20;
 	lcdhw->lcddma_fb1_base = CONFIG_AM335X_LCD_BASE;
-	lcdhw->lcddma_fb1_ceiling = CONFIG_AM335X_LCD_BASE + FBSIZE(panel); // + 0x20;
+	lcdhw->lcddma_fb1_ceiling = CONFIG_AM335X_LCD_BASE + FBSIZE(panel) + 0x20;
 	lcdhw->lcddma_ctrl = LCD_DMA_BURST_SIZE(LCD_DMA_BURST_16);
 
 	lcdhw->raster_timing0 = LCD_HORLSB(panel->hactive) |
