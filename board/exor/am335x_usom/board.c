@@ -35,12 +35,85 @@
 #include <environment.h>
 #include <watchdog.h>
 #include "board.h"
+#include "../../../drivers/video/am335x-fb.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
 void ena_rs232phy(void);
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 static struct cpsw_slave_data cpsw_slaves[];
+
+#ifdef CONFIG_AM335X_LCD
+static struct dpll_regs dpll_lcd_regs = {
+	.cm_clkmode_dpll = CM_WKUP + 0x98,
+	.cm_idlest_dpll = CM_WKUP + 0x48,
+	.cm_clksel_dpll = CM_WKUP + 0x54,
+};
+
+static int conf_disp_pll(int m, int n)
+{
+	struct cm_perpll *cmper = (struct cm_perpll *)CM_PER;
+	struct cm_dpll *cmdpll = (struct cm_dpll *)CM_DPLL;
+	struct dpll_params dpll_lcd = {m, n, -1, -1, -1, -1, -1};
+
+	u32 *const clk_domains[] = {
+		&cmper->lcdclkctrl,
+		0
+	};
+	u32 *const clk_modules_explicit_en[] = {
+		&cmper->lcdclkctrl,
+		&cmper->lcdcclkstctrl,
+		&cmper->epwmss0clkctrl,
+		0
+	};
+	do_enable_clocks(clk_domains, clk_modules_explicit_en, 1);
+	writel(0x0, &cmdpll->clklcdcpixelclk);
+
+	do_setup_dpll(&dpll_lcd_regs, &dpll_lcd);
+
+	return 0;
+}
+
+/*
+ * Show WCE7 splashimage
+ */
+void ShowSplash(void)
+{
+  //TODO: Dynamically set the LCD panel parameters, based on hw_dispid and displayconfig.h file
+  struct am335x_lcdpanel pnl;
+  pnl.hactive = 800;
+  pnl.vactive = 480;
+  pnl.bpp = 16;
+  pnl.hfp = 205;
+  pnl.hbp = 46;
+  pnl.hsw = 3;
+  pnl.vfp = 20;
+  pnl.vbp = 23;
+  pnl.vsw = 2;
+  pnl.pxl_clk_div = 10;
+  pnl.pol = 0;
+  pnl.pon_delay = 0;
+  pnl.panel_power_ctrl = NULL;
+  
+  //TODO Load splashimage and show it, if valid
+    
+  //Here we start LCD PLL and set LCD pinmux
+  conf_disp_pll(24, 1);
+  enable_lcdc_pin_mux();
+  
+  //TODO: Write a proper LCD power up sequence
+  gpio_request(61,"");
+  gpio_direction_output(61,1);
+  gpio_request(64,"");
+  gpio_direction_output(64,1);
+  gpio_request(7,"");
+  gpio_direction_output(7,1);
+  
+  // Start display refresh
+  am335xfb_init(&pnl);
+  
+}
+#endif
 
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
@@ -372,6 +445,9 @@ int board_late_init(void)
   tmp = getenv("swflag_wce");
   if((tmp) && (tmp[0] == '1'))
   {
+#ifdef CONFIG_AM335X_LCD    
+    ShowSplash();
+#endif
     puts ("mainOS: WCE\n");
     setenv("bootcmd", CONFIG_WCE_BOOTCOMMAND);
   }

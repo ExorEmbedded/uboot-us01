@@ -166,3 +166,37 @@ void enable_rmii2_pin_mux(void)
 {
   configure_module_pin_mux(rmii2_pin_mux);
 }
+
+#ifdef CONFIG_AM335X_LCD
+static struct module_pin_mux lcdc_pin_mux[] = {
+	{OFFSET(lcd_data0), (MODE(0) | PULLUDDIS)},	/* LCD_DAT0 */
+	{OFFSET(lcd_data1), (MODE(0) | PULLUDDIS)},	/* LCD_DAT1 */
+	{OFFSET(lcd_data2), (MODE(0) | PULLUDDIS)},	/* LCD_DAT2 */
+	{OFFSET(lcd_data3), (MODE(0) | PULLUDDIS)},	/* LCD_DAT3 */
+	{OFFSET(lcd_data4), (MODE(0) | PULLUDDIS)},	/* LCD_DAT4 */
+	{OFFSET(lcd_data5), (MODE(0) | PULLUDDIS)},	/* LCD_DAT5 */
+	{OFFSET(lcd_data6), (MODE(0) | PULLUDDIS)},	/* LCD_DAT6 */
+	{OFFSET(lcd_data7), (MODE(0) | PULLUDDIS)},	/* LCD_DAT7 */
+	{OFFSET(lcd_data8), (MODE(0) | PULLUDDIS)},	/* LCD_DAT8 */
+	{OFFSET(lcd_data9), (MODE(0) | PULLUDDIS)},	/* LCD_DAT9 */
+	{OFFSET(lcd_data10), (MODE(0) | PULLUDDIS)},	/* LCD_DAT10 */
+	{OFFSET(lcd_data11), (MODE(0) | PULLUDDIS)},	/* LCD_DAT11 */
+	{OFFSET(lcd_data12), (MODE(0) | PULLUDDIS)},	/* LCD_DAT12 */
+	{OFFSET(lcd_data13), (MODE(0) | PULLUDDIS)},	/* LCD_DAT13 */
+	{OFFSET(lcd_data14), (MODE(0) | PULLUDDIS)},	/* LCD_DAT14 */
+	{OFFSET(lcd_data15), (MODE(0) | PULLUDDIS)},	/* LCD_DAT15 */
+	{OFFSET(lcd_vsync), (MODE(0))},		/* LCD_VSYNC */
+	{OFFSET(lcd_hsync), (MODE(0))},		/* LCD_HSYNC */
+	{OFFSET(lcd_pclk), (MODE(0))},		/* LCD_PCLK */
+	{OFFSET(lcd_ac_bias_en), (MODE(0))},	/* LCD_AC_BIAS_EN */
+	{OFFSET(gpmc_csn0), MODE(7)},	                //gpio1_29 en_vdd	
+	{OFFSET(gpmc_csn3), MODE(7)},	                //gpio2_0 en_bl	
+	{OFFSET(ecap0_in_pwm0_out), MODE(7)},	        //gpio0_7 dimm	
+	{-1},
+};
+
+void enable_lcdc_pin_mux(void)
+{
+  configure_module_pin_mux(lcdc_pin_mux);
+}
+#endif
