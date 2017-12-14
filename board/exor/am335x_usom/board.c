@@ -44,9 +44,16 @@ static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 static struct cpsw_slave_data cpsw_slaves[];
 
 #ifdef CONFIG_AM335X_LCD
+/************************************************************************************************************
+ * LCD support for splashimage when booting WCE
+ *************************************************************************************************************/
   #define SPLASH_HDRLEN  		56
   #define SPLASH_STRIDE_IDX		0
   #define SPLASH_SIZE_IDX		2
+
+  #define EN_VDD_GPIO (61)
+  #define EN_BL_GPIO (64)
+  #define DIMM_GPIO (7)
 
 static struct dpll_regs dpll_lcd_regs = {
 	.cm_clkmode_dpll = CM_WKUP + 0x98,
@@ -54,6 +61,9 @@ static struct dpll_regs dpll_lcd_regs = {
 	.cm_clksel_dpll = CM_WKUP + 0x54,
 };
 
+/*
+ * Setup clocks for the LCD engine
+ */
 static int conf_disp_pll(int m, int n)
 {
 	struct cm_perpll *cmper = (struct cm_perpll *)CM_PER;
@@ -83,6 +93,7 @@ static int conf_disp_pll(int m, int n)
  */
 void ShowSplash(void)
 {
+  int i;
   void* loadaddr = (void*)(0x80200000);
     
   //TODO: Dynamically set the LCD panel parameters, based on hw_dispid and displayconfig.h file
@@ -122,35 +133,41 @@ void ShowSplash(void)
       if((splash_height == 0) || (splash_height > pnl.vactive))
 	return;
       
-      memset((void*)CONFIG_AM335X_LCD_BASE, 0, pnl.hactive * pnl.vactive * 2);
+      // Splashimage is valid. so we power on the LCD and write the framebuffer
+      enable_lcdc_pin_mux();
+      gpio_request(EN_VDD_GPIO,"");
+      gpio_direction_output(EN_VDD_GPIO,1);
+      
+      memset((void*)CONFIG_AM335X_LCD_BASE + 0x20, 0, pnl.hactive * pnl.vactive * 2);
       
       h = (pnl.hactive - splash_width) / 2;
       v = (pnl.vactive - splash_height) / 2;
      
       for( i = 0; i < splash_height; i++)
-      { //Copy raw by raw
+      { //Copy row by row
         void* src = loadaddr + SPLASH_HDRLEN + i * (splash_width * 2);
 	void* dst = (void*)CONFIG_AM335X_LCD_BASE + 0x20 + h*2 + (v+i)*2*pnl.hactive;
 	memcpy(dst,src, 2*splash_width);
       }
    }
   
-  //Here we start LCD PLL and set LCD pinmux
+  //Here we start LCD PLL
   conf_disp_pll(24, 1);
-  enable_lcdc_pin_mux();
-  
-  //TODO: Write a proper LCD power up sequence
-  gpio_request(61,"");
-  gpio_direction_output(61,1);
-  gpio_request(64,"");
-  gpio_direction_output(64,1);
-  gpio_request(7,"");
-  gpio_direction_output(7,1);
-  
+  for(i=0; i<10; i++)
+    udelay(10000);
   // Start display refresh
   am335xfb_init(&pnl);
-  
+  for(i=0; i<50; i++)
+    udelay(10000);
+  //Enable the backlight here
+  gpio_request(EN_BL_GPIO,"");
+  gpio_direction_output(EN_BL_GPIO,1);
+  gpio_request(DIMM_GPIO,"");
+  gpio_direction_output(DIMM_GPIO,1);
 }
+
+/************************************************************************************************************
+************************************************************************************************************/
 #endif
 
 /*
