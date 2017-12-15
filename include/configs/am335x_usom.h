@@ -368,9 +368,7 @@
 #define CONFIG_CMD_WCE
 #define CONFIG_WCE_BASE_RAM_ADDR 0x80000000
 
-#if 0
 #define CONFIG_AM335X_LCD
 #define CONFIG_AM335X_LCD_BASE (0x8D000000)
-#endif
 
 #endif	/* ! __CONFIG_AM335X_EVM_H */
