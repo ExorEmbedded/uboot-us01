@@ -47,6 +47,8 @@ static struct cpsw_slave_data cpsw_slaves[];
 /************************************************************************************************************
  * LCD support for splashimage when booting WCE
  *************************************************************************************************************/
+#include "displayconfig.h"
+
   #define SPLASH_HDRLEN  		56
   #define SPLASH_STRIDE_IDX		0
   #define SPLASH_SIZE_IDX		2
@@ -95,20 +97,36 @@ void ShowSplash(void)
 {
   int i;
   void* loadaddr = (void*)(0x80200000);
-    
-  //TODO: Dynamically set the LCD panel parameters, based on hw_dispid and displayconfig.h file
+  char* tmp;
+  unsigned long hw_dispid = NODISPLAY;
   struct am335x_lcdpanel pnl;
-  pnl.hactive = 800;
-  pnl.vactive = 480;
+  
+  // Get hw_dispid from environment and search the displayconfig list for the corresponding timings. Exit if not found.
+  tmp = getenv("hw_dispid");
+  if(!tmp)
+    return;
+  hw_dispid = (simple_strtoul (tmp, NULL, 10))&0xff;
+  
+  for(i=0; ((displayconfig[i].dispid != NODISPLAY) && (hw_dispid != displayconfig[i].dispid));i++);
+  
+  if(displayconfig[i].dispid == NODISPLAY)
+    return;
+
+  if(displayconfig[i].pclk_freq == 0)
+    return;
+  
+  //Dynamically set the LCD panel parameters, based on the displayconfig detected timings
+  pnl.hactive = displayconfig[i].rezx;
+  pnl.vactive = displayconfig[i].rezy;
   pnl.bpp = 16;
-  pnl.hfp = 205;
-  pnl.hbp = 46;
-  pnl.hsw = 3;
-  pnl.vfp = 20;
-  pnl.vbp = 23;
-  pnl.vsw = 2;
-  pnl.pxl_clk_div = 10;
-  pnl.pol = 0;
+  pnl.hfp = displayconfig[i].hs_fp;
+  pnl.hbp = displayconfig[i].hs_bp;
+  pnl.hsw = displayconfig[i].hs_w;
+  pnl.vfp = displayconfig[i].vs_fp;
+  pnl.vbp = displayconfig[i].vs_bp;
+  pnl.vsw = displayconfig[i].vs_w;
+  pnl.pxl_clk_div = (294000l + (displayconfig[i].pclk_freq / 2)) / displayconfig[i].pclk_freq;
+  pnl.pol = displayconfig[i].pclk_inv;
   pnl.pon_delay = 0;
   pnl.panel_power_ctrl = NULL;
   
