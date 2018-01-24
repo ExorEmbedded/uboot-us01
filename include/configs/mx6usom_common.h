@@ -123,6 +123,7 @@
 	"boot_fdt=yes\0" \
 	"smp=" CONFIG_SYS_NOSMP "\0"\
 	"skipbsp1=0\0" \
+	"enable_gigabit=0\0" \
 	"bootpart=0:1\0" \
 	"bootdir=/boot\0" \
 	"bootfile=zImage\0" \
@@ -163,10 +164,20 @@
 	"importbootenv=echo Importing environment from mmc ...; " \
 		"env import -t $loadaddr $filesize\0" \
 	"loadimage=load mmc ${bootpart} ${loadaddr} ${bootdir}/${bootfile}\0" \
-	"loadfdt=load mmc ${bootpart} ${fdtaddr} ${bootdir}/${fdtfile}\0" \
+	"loadfdt=load mmc ${bootpart} ${fdtaddr} ${bootdir}/${fdtfile}; \0" \
+	"checkgigabit="\
+		"if test $enable_gigabit = 1; then " \
+			"fdt addr ${fdtaddr} ; " \
+				"if fdt rm eth0_7xx/mdio/ethernet-phy1  fsl,disable-gigabit ; then " \
+					"echo Gigabit enabled ;" \
+				"else " \
+					"echo Gigabit not enabled ;" \
+				"fi; " \
+			"fi; \0 " \
 	"mmcloados=run mmcargs; " \
 		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
 			"if run loadfdt; then " \
+				"run checkgigabit; " \
 				"bootz ${loadaddr} - ${fdtaddr}; " \
 			"else " \
 				"if test ${boot_fdt} = try; then " \

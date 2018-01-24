@@ -680,6 +680,7 @@ int board_late_init(void)
   run_command("mmc rescan", 0);
   run_command("if test -e mmc 1:6 /$0030d8android$.bin; then setenv swflag_android 1; fi", 0);
   run_command("if test -e mmc 1:6 /$0030d8linux$.bin; then setenv swflag_android 0; fi", 0);
+  run_command("if test -e mmc 1:6 /$0030d8gigabit.bin; then setenv enable_gigabit 1; fi", 0);
  
   tmp = getenv("swflag_android");
   if((tmp) && (tmp[0] == '1'))
