@@ -175,6 +175,7 @@ static struct module_pin_mux lcdc_pin_mux[] = {
 	{OFFSET(ecap0_in_pwm0_out), MODE(7)},	        //gpio0_7 dimm	
 	{OFFSET(gpmc_be0n_cle), MODE(7)},	        //gpio2_5 FAULT
 	{OFFSET(gpmc_advn_ale), MODE(7)},	        //gpio2_2 DL
+	{OFFSET(usb0_drvvbus), MODE(7)},	        //gpio0_18 USB0_DRVVBUS
 	{-1},
 };
 

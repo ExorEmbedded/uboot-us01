@@ -51,6 +51,7 @@ static struct cpsw_slave_data cpsw_slaves[];
   #define DIMM_GPIO (7)
   #define FAULT_GPIO (69)
   #define DL_GPIO (66) 
+  #define USB0DRVVBUS_GPIO (18) 
   
 
 #if defined(CONFIG_SPL_BUILD)
@@ -229,7 +230,7 @@ int board_init(void)
 {
   printf("board_init++\n");
 #if defined(CONFIG_HW_WATCHDOG)
-  hw_watchdog_init();
+//  hw_watchdog_init();
 #endif
   gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
   printf("board_init--\n");
@@ -250,16 +251,19 @@ int board_late_init(void)
   gpio_direction_output(EN_BL_GPIO,1);
   gpio_request(DIMM_GPIO,"");
   gpio_direction_output(DIMM_GPIO,1);
+
+  //Enable USB0 DRVVBUS
+  gpio_request(USB0DRVVBUS_GPIO,"");
+  gpio_direction_output(USB0DRVVBUS_GPIO,1);
   
   //Green LED ON, RED OFF
   gpio_request(FAULT_GPIO ,"");
   gpio_direction_output(FAULT_GPIO,0);
   gpio_request(DL_GPIO ,"");
-  gpio_direction_output(DL_GPIO,0);
+  gpio_direction_output(DL_GPIO,1);
   
-  //Stay with USB enabled forever
-  while(1)
-    run_command("usb reset", 0);
+  //Loop forever
+  while(1);
     
   return 0;
 }
