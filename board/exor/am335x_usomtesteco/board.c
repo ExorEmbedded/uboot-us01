@@ -230,7 +230,7 @@ int board_init(void)
 {
   printf("board_init++\n");
 #if defined(CONFIG_HW_WATCHDOG)
-//  hw_watchdog_init();
+  hw_watchdog_init();
 #endif
   gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
   printf("board_init--\n");
@@ -263,7 +263,13 @@ int board_late_init(void)
   gpio_direction_output(DL_GPIO,1);
   
   //Loop forever
-  while(1);
+  while(1)
+  {
+    mdelay(1000);
+#if defined(CONFIG_HW_WATCHDOG)
+    hw_watchdog_reset();
+#endif
+  }
     
   return 0;
 }
