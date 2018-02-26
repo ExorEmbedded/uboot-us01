@@ -1,0 +1,10 @@
+Summary
+=======
+
+Board files for the Exor uS01 AM335x based boards.
+
+Hardware
+========
+uS01 AM335x based boards are supported.
+System peculiarities (MAC address, display ID, HW ID code... ) are handled based on I2C SEEPROM parsing (the factory section of Exor SEEPROM format 3).
+
