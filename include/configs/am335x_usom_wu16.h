@@ -58,7 +58,7 @@
 #ifndef CONFIG_SPL_BUILD
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"altbootcmd="CONFIG_SYS_ALT_BOOTCOMMAND"\0"\
-	"bootlimit=3\0" \
+	"bootlimit=20\0" \
 	"loadaddr=0x80200000\0" \
 	"fdtaddr=0x80F80000\0" \
 	"fdt_high=0xffffffff\0" \

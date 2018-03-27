@@ -111,7 +111,7 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"altbootcmd="CONFIG_SYS_ALT_BOOTCOMMAND"\0"\
-	"bootlimit=3\0" \
+	"bootlimit=20\0" \
 	"silent=1\0" \
 	"loadaddr=0x12000000\0" \
 	"fdtaddr=0x18000000\0" \
