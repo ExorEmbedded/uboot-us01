@@ -18,6 +18,15 @@ void bootcount_store(ulong a)
 
 	buf[0] = BC_MAGIC;
 	buf[1] = (a & 0xff);
+#ifdef CONFIG_SYS_BOOTCOUNT_DYNAMIC_DELAY
+#warning CONFIG_SYS_BOOTCOUNT_DYNAMIC_DELAY
+	if( a < 20 )
+	{
+		if( a > 3 )
+			mdelay(2000);
+ 	}
+#endif
+
 	ret = i2c_write(CONFIG_SYS_I2C_RTC_ADDR, CONFIG_SYS_BOOTCOUNT_ADDR,
 		  CONFIG_BOOTCOUNT_ALEN, buf, 2);
 	if (ret != 0)
