@@ -58,7 +58,7 @@
 #ifndef CONFIG_SPL_BUILD
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"altbootcmd="CONFIG_SYS_ALT_BOOTCOMMAND"\0"\
-	"bootlimit=20\0" \
+	"bootlimit=3\0" \
 	"loadaddr=0x80200000\0" \
 	"fdtaddr=0x80F80000\0" \
 	"fdt_high=0xffffffff\0" \
@@ -297,8 +297,7 @@
 #define CONFIG_SYS_I2C_RTC_ADDR 0x68
 #undef  CONFIG_SYS_BOOTCOUNT_ADDR
 #define CONFIG_SYS_BOOTCOUNT_ADDR 0x19
-
-#define CONFIG_SYS_BOOTCOUNT_DYNAMIC_DELAY      1
+#define CONFIG_SYS_BOOTCOUNT_NO_INCREMENT 1
 
 #define CONFIG_SPL_ENV_SUPPORT
 #define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/am33xx/u-boot-spl.lds"

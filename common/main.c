@@ -345,7 +345,9 @@ static void process_boot_delay(void)
 
 #ifdef CONFIG_BOOTCOUNT_LIMIT
 	bootcount = bootcount_load();
+#ifndef CONFIG_SYS_BOOTCOUNT_NO_INCREMENT	
 	bootcount++;
+#endif	
 	bootcount_store (bootcount);
 	setenv_ulong("bootcount", bootcount);
 	bootlimit = getenv_ulong("bootlimit", 10, 0);
