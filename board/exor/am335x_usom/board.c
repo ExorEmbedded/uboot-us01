@@ -415,6 +415,12 @@ int board_late_init(void)
   unsigned long rs232phyena = 0;
   unsigned long jumperflagsl = 0;
   
+  /* Ticket 1124: Change DDR priority policy to avoid possible LCD flickering due to FIFO_UNDERRUN events in display refresh when 
+   * using 10" display and high DDR bus load is present (ie VNC)
+   */
+  struct emif_reg_struct* emif = (struct emif_reg_struct*)(EMIF1_BASE);
+  writel(0x3d3d3d, &emif->emif_l3_config);
+   
   /* Get the system configuration from the I2C SEEPROM */
   if(read_eeprom())
   {
