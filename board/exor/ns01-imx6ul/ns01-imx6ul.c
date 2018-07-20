@@ -62,6 +62,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define NS01EVK_VAL    129
 #define NS01EK435_VAL  130
+#define NS01PA18_VAL   132
 
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
@@ -382,6 +383,8 @@ int board_late_init(void)
     setenv("board_name", "ns01-evk"); 
   else if(hwcode==NS01EK435_VAL)
     setenv("board_name", "ns01-ek435"); 
+  else if(hwcode==NS01PA18_VAL)
+    setenv("board_name", "ns01-pa18");
   else
   {
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
