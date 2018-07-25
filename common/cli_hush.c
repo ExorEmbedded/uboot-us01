@@ -3234,7 +3234,14 @@ static int parse_stream_outer(struct in_str *inp, int flag)
 				b_reset(&temp);
 			}
 #ifdef __U_BOOT__
-			if (inp->__promptme == 0) printf("<INTERRUPT>\n");
+			if (inp->__promptme == 0)
+			{
+#ifdef CONFIG_HAVEPRGUART
+			  extern void ena_rs232phy(void);
+			  ena_rs232phy();
+#endif
+			  printf("<INTERRUPT>\n");
+			}
 			inp->__promptme = 1;
 #endif
 			temp.nonnull = 0;

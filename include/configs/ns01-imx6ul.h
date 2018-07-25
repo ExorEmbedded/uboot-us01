@@ -267,4 +267,7 @@
 #undef  CONFIG_SYS_BOOTCOUNT_ADDR
 #define CONFIG_SYS_BOOTCOUNT_ADDR 0x19
 
+/* Programmable UART on console porty*/
+#define CONFIG_HAVEPRGUART
+
 #endif /* __NS01_IMX6UL_CONFIG_H */

@@ -56,6 +56,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ENET_CLK_PAD_CTRL  (PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST)
 
 #define RMII_PHY_RESET IMX_GPIO_NR(1, 28)
+#define TX1_EN_GPIO IMX_GPIO_NR(4, 24)
 
 #ifdef CONFIG_SYS_I2C_MXC
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
@@ -63,6 +64,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define NS01EVK_VAL    129
 #define NS01EK435_VAL  130
 #define NS01PA18_VAL   132
+
+void ena_rs232phy(void);
 
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
@@ -193,7 +196,10 @@ int dram_init(void)
 static iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_UART1_TX_DATA__UART1_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
 	MX6_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
+	MX6_PAD_CSI_DATA03__GPIO4_IO24 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
+
+
 
 static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX6_PAD_SD1_CLK__USDHC1_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -362,14 +368,27 @@ int board_late_init(void)
 {
   char* tmp;
   unsigned long hwcode = 0;
+  unsigned long rs232phyena = 0;
 		
+  /* Enable the rs232 phy based on "rs232_txen" environment variable */
+  tmp = getenv("rs232_txen");
+  if(tmp)
+  {
+    rs232phyena = (simple_strtoul (tmp, NULL, 10))&0xff;
+    if(rs232phyena != 0)
+    {
+      ena_rs232phy();
+    }
+  }
+
   /* Get the system configuration from the I2C SEEPROM */
   if(read_eeprom())
   {
+    ena_rs232phy();
     printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
     USBgethwcfg();
   }
-  
+ 
   /* Set the "board_name" env. variable according with the "hw_code" */
   tmp = getenv("hw_code");
   if(!tmp)
@@ -400,3 +419,14 @@ int board_late_init(void)
   return 0;
 }
 
+#ifdef CONFIG_HAVEPRGUART
+void ena_rs232phy(void)
+{
+  gpio_request(TX1_EN_GPIO, "");
+  gpio_direction_output(TX1_EN_GPIO, 1);
+  
+  udelay(1000);
+}
+#else
+void ena_rs232phy(void){}
+#endif
