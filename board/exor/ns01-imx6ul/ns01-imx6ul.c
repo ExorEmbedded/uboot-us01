@@ -55,7 +55,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define ENET_CLK_PAD_CTRL  (PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST)
 
-#define RMII_PHY_RESET IMX_GPIO_NR(1, 28)
 #define TX1_EN_GPIO IMX_GPIO_NR(4, 24)
 
 #ifdef CONFIG_SYS_I2C_MXC
@@ -127,7 +126,6 @@ static iomux_v3_cfg_t const fec_pads[] = {
 	MX6_PAD_ENET2_RX_DATA1__ENET2_RDATA01	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_RX_EN__ENET2_RX_EN	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_RX_ER__ENET2_RX_ER	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_UART4_TX_DATA__GPIO1_IO28	| MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 static void setup_iomux_fec(void)
@@ -139,23 +137,7 @@ int board_eth_init(bd_t *bis)
 {
 	setup_iomux_fec();
 
-	gpio_direction_output(RMII_PHY_RESET, 0);
-	/*
-	 * According to KSZ8081MNX-RNB manual:
-	 * For warm reset, the reset (RST#) pin should be asserted low for a
-	 * minimum of 500μs.  The strap-in pin values are read and updated
-	 * at the de-assertion of reset.
-	 */
-	udelay(500);
-
-	gpio_direction_output(RMII_PHY_RESET, 1);
-	/*
-	 * According to KSZ8081MNX-RNB manual:
-	 * After the de-assertion of reset, wait a minimum of 100μs before
-	 * starting programming on the MIIM (MDC/MDIO) interface.
-	 */
 	udelay(100);
-
 	return fecmxc_initialize(bis);
 }
 
