@@ -328,6 +328,7 @@ int board_init(void)
 {
 	/* Address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
+	gd->flags |= GD_FLG_SILENT;
 
 	#ifdef CONFIG_SYS_I2C_MXC
 		setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
@@ -351,7 +352,10 @@ int board_late_init(void)
   char* tmp;
   unsigned long hwcode = 0;
   unsigned long rs232phyena = 0;
-		
+
+  setenv("silent", "1"); 
+  gd->flags |= GD_FLG_SILENT;
+  
   /* Enable the rs232 phy based on "rs232_txen" environment variable */
   tmp = getenv("rs232_txen");
   if(tmp)
@@ -381,13 +385,20 @@ int board_late_init(void)
     hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
   
   if(hwcode==NS01EVK_VAL)
+  {
     setenv("board_name", "ns01-evk"); 
+    ena_rs232phy();
+  }
   else if(hwcode==NS01EK435_VAL)
+  {
     setenv("board_name", "ns01-ek435"); 
+    ena_rs232phy();
+  }
   else if(hwcode==NS01PA18_VAL)
     setenv("board_name", "ns01-pa18");
   else
   {
+    ena_rs232phy();
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
     setenv("board_name", "usom_undefined");
   }
@@ -406,7 +417,9 @@ void ena_rs232phy(void)
 {
   gpio_request(TX1_EN_GPIO, "");
   gpio_direction_output(TX1_EN_GPIO, 1);
-  
+
+  run_command("setenv silent", 0);
+  gd->flags &= ~GD_FLG_SILENT;
   udelay(1000);
 }
 #else

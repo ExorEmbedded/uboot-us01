@@ -14,6 +14,14 @@
 #include "mx6_common.h"
 #include <asm/imx-common/gpio.h>
 
+/* 
+ * Silent console option
+ */
+#define CONFIG_SILENT_CONSOLE
+#define CONFIG_SILENT_CONSOLE_UPDATE_ON_SET
+#define CONFIG_SILENT_U_BOOT_ONLY
+#define CONFIG_SYS_DEVICE_NULLDEV
+
 /* Network support */
 
 #define CONFIG_FEC_MXC
@@ -54,6 +62,7 @@
 	   
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"altbootcmd="CFG_SYS_ALT_BOOTCOMMAND"\0"\
+	"silent=1\0" \
 	"bootlimit=3\0" \
 	"fdtaddr=0x83000000\0" \
 	"fdt_high=0xffffffff\0" \
