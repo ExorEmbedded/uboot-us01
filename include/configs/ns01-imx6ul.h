@@ -181,6 +181,8 @@
 			"setenv fdtfile ns01-ek435.dtb; fi; " \
 		"if test $board_name = ns01-pa18; then " \
 			"setenv fdtfile ns01-pa18.dtb; fi; " \
+		"if test $board_name = ns01-keb01; then " \
+			"setenv fdtfile ns01-keb01.dtb; fi; " \
 		"if test $board_name = usom_undefined; then " \
 			"setenv fdtfile usom_undefined.dtb; fi; \0" 
 	

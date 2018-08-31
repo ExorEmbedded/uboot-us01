@@ -63,6 +63,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define NS01EVK_VAL    129
 #define NS01EK435_VAL  130
 #define NS01PA18_VAL   132
+#define NS01KEB01_VAL  134
 
 void ena_rs232phy(void);
 
@@ -396,6 +397,8 @@ int board_late_init(void)
   }
   else if(hwcode==NS01PA18_VAL)
     setenv("board_name", "ns01-pa18");
+  else if(hwcode==NS01KEB01_VAL)
+    setenv("board_name", "ns01-keb01");
   else
   {
     ena_rs232phy();
