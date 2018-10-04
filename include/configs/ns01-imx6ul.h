@@ -185,6 +185,8 @@
 			"setenv fdtfile ns01-keb01.dtb; fi; " \
 		"if test $board_name = ns01-x5; then " \
 			"setenv fdtfile ns01-x5.dtb; fi; " \
+		"if test $board_name = ns01-x5bs; then " \
+			"setenv fdtfile ns01-x5bs.dtb; fi; " \
 		"if test $board_name = usom_undefined; then " \
 			"setenv fdtfile usom_undefined.dtb; fi; \0" 
 	
