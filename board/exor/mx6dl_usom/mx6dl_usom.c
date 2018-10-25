@@ -96,6 +96,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define RXEN0_GPIO IMX_GPIO_NR(6, 31)
 #define DXEN0_GPIO IMX_GPIO_NR(3, 14)
 #define MODE0_GPIO IMX_GPIO_NR(3, 15)
+#define RST_OUT_GPIO IMX_GPIO_NR(7, 12)
+
+#define DVIPLUGIN_I2CSA (0x38)
 
 #define WDOG1WRSRREG (0x20bc004)
 #define SNVSLPCRREG  (0x20cc038)
@@ -178,6 +181,10 @@ iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_EIM_DA14__GPIO3_IO14 | MUX_PAD_CTRL(NO_PAD_CTRL),
 	MX6_PAD_EIM_DA15__GPIO3_IO15 | MUX_PAD_CTRL(NO_PAD_CTRL),
 	MX6_PAD_EIM_BCLK__GPIO6_IO31 | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
+iomux_v3_cfg_t const rst_out_pads[] = {
+	MX6_PAD_GPIO_17__GPIO7_IO12  | MUX_PAD_CTRL(NO_PAD_CTRL),  /* RST_OUT line GPIO7,12 */
 };
 
 iomux_v3_cfg_t const enet_pads[] = {
@@ -264,6 +271,7 @@ iomux_v3_cfg_t const usdhc4_pads[] = {
 #define PCA9633_GREEN_OFF	0x00
 #define PCA9633_BLUE_OFF	0x00
 #define PCA9633_UNUSED_OFF	0x00
+
 static void setup_led(void)
 {
     unsigned char value = 0xFF;
@@ -281,6 +289,39 @@ static void setup_led(void)
     }
 }
 #endif
+
+/* Detection sequence for the DVI plugin module 
+ */
+static void DVIpluginDetect(void)
+{
+  /* Set RST_OUT to HIGH 
+   * NOTE: On final design this should be not required and should be removed
+   *       to reduce the boot time.
+   */ 
+  imx_iomux_v3_setup_multiple_pads(rst_out_pads, ARRAY_SIZE(rst_out_pads));
+  gpio_request(RST_OUT_GPIO,"");
+  gpio_direction_output(RST_OUT_GPIO,0);
+  mdelay(5);
+  gpio_set_value(RST_OUT_GPIO, 1);
+  mdelay(10);
+  
+  /* Probe the TFP410 DVI out chip for DVI plugin detection */
+  i2c_set_bus_num(2);
+  if (!i2c_probe(DVIPLUGIN_I2CSA)) 
+  {
+    printf("DVI plugin module found\n");
+    
+    /* DVI plugin module found, append the dvi_dispid parameter to the optargs */
+    if(!getenv("dvi_dispid"))
+      run_command("setenv dvi_dispid 0", 0);
+    
+    run_command("setenv optargs $optargs dvi_dispid=${dvi_dispid}", 0);
+    
+    /* When the ADP is not present and we have the DVI plugin installed, the hw_dispid var needs to be invalidated (255) */
+    if(i2c_probe(CONFIG_SYS_I2C_ADPADD))
+      run_command("setenv hw_dispid 255", 0);
+  }
+}
 
 /* set all switches APS in normal and PFM mode in standby */
 static int setup_pmic_mode(int chip)
@@ -641,6 +682,9 @@ int board_late_init(void)
     if(getenv("eth1addr"))
       if(getenv("eth2addr"))
 	run_command("setenv optargs pcie_tse1addr=${eth1addr} pcie_tse2addr=${eth2addr}", 0);
+    
+    /* Detection of the DVI plugin module */
+    DVIpluginDetect();
   }
   
   if(hwcode==ETOP7XX_VAL)
