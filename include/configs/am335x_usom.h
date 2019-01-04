@@ -68,6 +68,7 @@
 	"bootfile=zImage\0" \
 	"fdtfile=usom_undefined.dtb\0" \
 	"fastboot=n\0" \
+	"hw_switch=0\0" \
 	"console=/dev/null\0" \
 	"rs232_txen=0\0" \
 	"optargs=\0" \
@@ -83,6 +84,7 @@
 		"hw_dispid=${hw_dispid} " \
 		"hw_code=${hw_code} " \
 		"fastboot=${fastboot} " \
+		"hw_switch=${hw_switch} " \
 		"board_name=${board_name} " \
 		"touch_type=${touch_type} " \
 		"ethaddr=${ethaddr} " \
@@ -92,6 +94,7 @@
 		"${optargs} " \
 		"hw_dispid=${hw_dispid} " \
 		"hw_code=${hw_code} " \
+		"hw_switch=${hw_switch} " \
 		"board_name=${board_name} " \
 		"touch_type=${touch_type} " \
 		"ethaddr=${ethaddr} " \
@@ -106,6 +109,7 @@
 		"${optargs} " \
 		"hw_dispid=${hw_dispid} " \
 		"hw_code=${hw_code} " \
+		"hw_switch=${hw_switch} " \
 		"board_name=${board_name} " \
 		"touch_type=${touch_type} " \
 		"ethaddr=${ethaddr} " \
@@ -147,6 +151,7 @@
 		"${optargs} " \
 		"hw_dispid=${hw_dispid} " \
 		"hw_code=${hw_code} " \
+		"hw_switch=${hw_switch} " \
 		"board_name=${board_name} " \
 		"touch_type=${touch_type} " \
 		"ethaddr=${ethaddr} " \
