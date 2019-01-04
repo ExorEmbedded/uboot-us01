@@ -281,10 +281,12 @@ int board_late_init(void)
   
   tmp = getenv("fastboot");
   if(tmp)
-  {
-    setenv("board_name", "usom_wu16");
-    setenv("bootcmd", CONFIG_BOOTCOMMAND_FAST);
-  }
+    if(tmp[0]=='y')
+    {
+      setenv("board_name", "usom_wu16");
+      setenv("bootcmd", CONFIG_BOOTCOMMAND_FAST);
+      return 0;
+    }
 
   /* Enable the rs232 phy based on "rs232_txen" environment variable */
   tmp = getenv("rs232_txen");

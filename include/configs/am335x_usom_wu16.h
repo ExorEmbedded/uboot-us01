@@ -213,9 +213,18 @@
        "setenv mmcdev 1; " \
        "setenv bootpart 1:3; " \
        "setenv mmcroot /dev/mmcblk1p3 ro; " \
-       "run mmcboot;"
+       "run mmcboot;" \
+       "echo Try booting Linux from USB stick...;" \
+       "run usbboot;" \
+       "echo Try booting Linux from EMMC, recovery BSP...;" \
+       "setenv mmcdev 1; " \
+       "setenv bootpart 1:2; " \
+       "setenv mmcroot /dev/mmcblk1p2 ro; " \
+       "run mmcboot;" 
 
 #define CONFIG_BOOTCOMMAND \
+	"echo Try booting Linux from USB stick...;" \
+	"run usbboot;" \
 	"setenv mmcdev 0; " \
 	"run findfdt; " \
 	"echo Try booting Linux from SD-card...;" \
@@ -227,8 +236,6 @@
 	"setenv mmcroot /dev/mmcblk1p3 ro; " \
 	"run mmcboot;" \
 	"fi; " \
-	"echo Try booting Linux from USB stick...;" \
-	"run usbboot;" \
 	"echo Try booting Linux from EMMC, recovery BSP...;" \
 	"setenv mmcdev 1; " \
 	"setenv bootpart 1:2; " \
