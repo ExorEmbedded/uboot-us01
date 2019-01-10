@@ -223,10 +223,10 @@
        "run mmcboot;" 
 
 #define CONFIG_BOOTCOMMAND \
+	"run findfdt; " \
 	"echo Try booting Linux from USB stick...;" \
 	"run usbboot;" \
 	"setenv mmcdev 0; " \
-	"run findfdt; " \
 	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
 	"if test $skipbsp1 = 0; then " \
