@@ -1,0 +1,14 @@
+if TARGET_IMX8MM_US04
+
+config SYS_BOARD
+	default "imx8mm_us04"
+
+config SYS_VENDOR
+	default "freescale"
+
+config SYS_CONFIG_NAME
+	default "imx8mm_us04"
+
+source "board/freescale/common/Kconfig"
+
+endif

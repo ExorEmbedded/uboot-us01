@@ -54,6 +54,12 @@ config TARGET_IMX8MM_EVK
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
 
+config TARGET_IMX8MM_US04
+	bool "imx8mm LPDDR4 US04 board"
+	select IMX8MM
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
+	
 config TARGET_IMX8MM_DDR4_EVK
 	bool "imx8mm DDR4 EVK board"
 	select IMX8MM
@@ -70,5 +76,6 @@ source "board/freescale/imx8mq_arm2/Kconfig"
 source "board/freescale/imx8mq_phanbell/Kconfig"
 source "board/freescale/imx8mm_evk/Kconfig"
 source "board/freescale/imx8mm_val/Kconfig"
+source "board/freescale/imx8mm_us04/Kconfig"
 
 endif
