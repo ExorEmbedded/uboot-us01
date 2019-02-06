@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 NXP
+ * Copyright 2019 Exor International S.p.a.
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -13,15 +14,15 @@
 #include "imx_env.h"
 
 #ifdef CONFIG_SECURE_BOOT
-#define CONFIG_CSF_SIZE			0x2000 /* 8K region */
+#define CONFIG_CSF_SIZE                0x2000 /* 8K region */
 #endif
 
-#define CONFIG_SPL_MAX_SIZE		(148 * 1024)
-#define CONFIG_SYS_MONITOR_LEN		(512 * 1024)
+#define CONFIG_SPL_MAX_SIZE            (148 * 1024)
+#define CONFIG_SYS_MONITOR_LEN         (512 * 1024)
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300
 #define CONFIG_SYS_MMCSD_FS_BOOT_PARTITION	1
-#define CONFIG_SYS_UBOOT_BASE		(QSPI0_AMBA_BASE + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512)
+#define CONFIG_SYS_UBOOT_BASE          (QSPI0_AMBA_BASE + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512)
 
 #ifdef CONFIG_SPL_BUILD
 /*#define CONFIG_ENABLE_DDR_TRAINING_DEBUG*/
@@ -42,7 +43,7 @@
 #define CONFIG_SYS_ICACHE_OFF
 #define CONFIG_SYS_DCACHE_OFF
 
-#define CONFIG_MALLOC_F_ADDR		0x912000 /* malloc f used before GD_FLG_FULL_MALLOC_INIT set */
+#define CONFIG_MALLOC_F_ADDR           0x912000 /* malloc f used before GD_FLG_FULL_MALLOC_INIT set */
 
 #define CONFIG_SPL_ABORT_ON_RAW_IMAGE /* For RAW image gives a error info not panic */
 
@@ -55,9 +56,9 @@
 #define CONFIG_POWER_BD71837
 
 #define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
-#define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
-#define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
+#define CONFIG_SYS_I2C_MXC_I2C1		   /* enable I2C bus 1 */
+#define CONFIG_SYS_I2C_MXC_I2C2		   /* enable I2C bus 2 */
+#define CONFIG_SYS_I2C_MXC_I2C3		   /* enable I2C bus 3 */
 
 #define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 #endif
@@ -139,50 +140,48 @@
 	   "else booti ${loadaddr} - ${fdt_addr}; fi"
 
 /* Link Definitions */
-#define CONFIG_LOADADDR			0x40480000
+#define CONFIG_LOADADDR                0x40480000
 
 #define CONFIG_SYS_LOAD_ADDR           CONFIG_LOADADDR
 
-#define CONFIG_SYS_INIT_RAM_ADDR        0x40000000
-#define CONFIG_SYS_INIT_RAM_SIZE        0x80000
+#define CONFIG_SYS_INIT_RAM_ADDR       0x40000000
+#define CONFIG_SYS_INIT_RAM_SIZE       0x80000
 #define CONFIG_SYS_INIT_SP_OFFSET \
         (CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_INIT_SP_ADDR \
         (CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
 #define CONFIG_ENV_OVERWRITE
-#if defined(CONFIG_ENV_IS_IN_MMC)
-#define CONFIG_ENV_OFFSET               (64 * SZ_64K)
-#endif
-#define CONFIG_ENV_SIZE			0x1000
-#define CONFIG_SYS_MMC_ENV_DEV		0   /* USDHC2 */
-#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
+#define CONFIG_ENV_OFFSET              (0)
+#define CONFIG_ENV_SIZE                0x1000
+#define CONFIG_SYS_MMC_ENV_DEV         1 /* Environment in EMMC, BOOT2 partition */
+#define CONFIG_SYS_MMC_ENV_PART        2 
+#define CONFIG_MMCROOT                 "/dev/mmcblk1p2"
 
 /* Size of malloc() pool */
-#define CONFIG_SYS_MALLOC_LEN		((CONFIG_ENV_SIZE + (2*1024) + (16*1024)) * 1024)
+#define CONFIG_SYS_MALLOC_LEN          ((CONFIG_ENV_SIZE + (2*1024) + (16*1024)) * 1024)
 
-#define CONFIG_SYS_SDRAM_BASE           0x40000000
-#define PHYS_SDRAM                      0x40000000
-#define PHYS_SDRAM_SIZE			0x80000000 /* 2GB DDR */
-#define CONFIG_NR_DRAM_BANKS		1
+#define CONFIG_SYS_SDRAM_BASE          0x40000000
+#define PHYS_SDRAM                     0x40000000
+#define PHYS_SDRAM_SIZE                0x80000000 /* 2GB DDR */
+#define CONFIG_NR_DRAM_BANKS           1
 
-#define CONFIG_SYS_MEMTEST_START    PHYS_SDRAM
-#define CONFIG_SYS_MEMTEST_END      (CONFIG_SYS_MEMTEST_START + (PHYS_SDRAM_SIZE >> 1))
+#define CONFIG_SYS_MEMTEST_START       PHYS_SDRAM
+#define CONFIG_SYS_MEMTEST_END         (CONFIG_SYS_MEMTEST_START + (PHYS_SDRAM_SIZE >> 1))
 
-#define CONFIG_BAUDRATE			115200
+#define CONFIG_BAUDRATE                115200
 
 #define CONFIG_MXC_UART
-#define CONFIG_MXC_UART_BASE		UART1_BASE_ADDR
+#define CONFIG_MXC_UART_BASE           UART1_BASE_ADDR
 
 /* Monitor Command Prompt */
 #undef CONFIG_SYS_PROMPT
-#define CONFIG_SYS_PROMPT		"uS04=> "
+#define CONFIG_SYS_PROMPT              "uS04=> "
 #define CONFIG_SYS_PROMPT_HUSH_PS2     "> "
 #define CONFIG_SYS_CBSIZE              2048
 #define CONFIG_SYS_MAXARGS             64
 #define CONFIG_SYS_BARGSIZE CONFIG_SYS_CBSIZE
-#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
-					sizeof(CONFIG_SYS_PROMPT) + 16)
+#define CONFIG_SYS_PBSIZE              (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
 
 #define CONFIG_IMX_BOOTAUX
 
@@ -191,11 +190,11 @@
 #define CONFIG_FSL_ESDHC
 #define CONFIG_FSL_USDHC
 
-#define CONFIG_SYS_FSL_USDHC_NUM	2
-#define CONFIG_SYS_FSL_ESDHC_ADDR       0
+#define CONFIG_SYS_FSL_USDHC_NUM       2
+#define CONFIG_SYS_FSL_ESDHC_ADDR      0
 
-#define CONFIG_SUPPORT_EMMC_BOOT	/* eMMC specific */
-#define CONFIG_SYS_MMC_IMG_LOAD_PART	1
+#define CONFIG_SUPPORT_EMMC_BOOT	   /* eMMC specific */
+#define CONFIG_SYS_MMC_IMG_LOAD_PART   1
 
 #define CONFIG_MXC_GPIO
 
@@ -205,10 +204,10 @@
 #ifndef CONFIG_DM_I2C
 #define CONFIG_SYS_I2C
 #endif
-#define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
-#define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
-#define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
-#define CONFIG_SYS_I2C_SPEED		100000
+#define CONFIG_SYS_I2C_MXC_I2C1        /* enable I2C bus 1 */
+#define CONFIG_SYS_I2C_MXC_I2C2        /* enable I2C bus 2 */
+#define CONFIG_SYS_I2C_MXC_I2C3        /* enable I2C bus 3 */
+#define CONFIG_SYS_I2C_SPEED           100000
 
 /* USB configs */
 #ifndef CONFIG_SPL_BUILD
@@ -223,12 +222,12 @@
 #endif
 
 #define CONFIG_USB_GADGET_DUALSPEED
-#define CONFIG_USB_GADGET_VBUS_DRAW 2
+#define CONFIG_USB_GADGET_VBUS_DRAW    2
 
 #define CONFIG_CI_UDC
 
 #define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
-#define CONFIG_USB_MAX_CONTROLLER_COUNT         2
+#define CONFIG_USB_MAX_CONTROLLER_COUNT 2
 
 #define CONFIG_OF_SYSTEM_SETUP
 
