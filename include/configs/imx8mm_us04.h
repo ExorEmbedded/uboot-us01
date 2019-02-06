@@ -231,4 +231,12 @@
 
 #define CONFIG_OF_SYSTEM_SETUP
 
+/* Bootcounter using the M41T83 I2C RTC NVRAM */
+#define CONFIG_BOOTCOUNT_LIMIT
+#define CONFIG_BOOTCOUNT_I2C
+#define CONFIG_BOOTCOUNT_ALEN           1
+#define CONFIG_SYS_I2C_RTC_ADDR         0x68
+#undef  CONFIG_SYS_BOOTCOUNT_ADDR
+#define CONFIG_SYS_BOOTCOUNT_ADDR       0x19
+
 #endif
