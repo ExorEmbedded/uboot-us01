@@ -136,3 +136,5 @@ obj-$(CONFIG_$(SPL_)LOG) += log.o
 obj-$(CONFIG_$(SPL_)LOG_CONSOLE) += log_console.o
 obj-y += s_record.o
 obj-y += xyzModem.o
+obj-$(CONFIG_CMD_I2CHWCFG) += cmd_i2chwcfg.o
+
