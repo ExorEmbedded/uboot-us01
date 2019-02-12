@@ -98,7 +98,7 @@
 	"skipbsp1=0\0" \
 	"bootpart=0:1\0" \
 	"bootdir=/boot\0" \
-	"bootfile=zImage\0" \
+	"bootfile=Image\0" \
 	"fdtfile=usom_undefined.dtb\0" \
 	"fastboot=n\0" \
 	"rs232_txen=0\0" \
@@ -125,16 +125,16 @@
 	"mmcloados=run mmcargs; " \
 		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
 			"if run loadfdt; then " \
-				"bootz ${loadaddr} - ${fdtaddr}; " \
+				"booti ${loadaddr} - ${fdtaddr}; " \
 			"else " \
 				"if test ${boot_fdt} = try; then " \
-					"bootz; " \
+					"booti; " \
 				"else " \
 					"echo WARN: Cannot load the DT; " \
 				"fi; " \
 			"fi; " \
 		"else " \
-			"bootz; " \
+			"booti; " \
 		"fi;\0" \
 	"mmcboot=mmc dev ${mmcdev}; " \
 		"if mmc rescan; then " \
@@ -164,16 +164,16 @@
 	"usbloados=run usbargs; " \
 		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
 			"if run usbloadfdt; then " \
-				"bootz ${loadaddr} - ${fdtaddr}; " \
+				"booti ${loadaddr} - ${fdtaddr}; " \
 			"else " \
 				"if test ${boot_fdt} = try; then " \
-					"bootz; " \
+					"booti; " \
 				"else " \
 					"echo WARN: Cannot load the DT; " \
 				"fi; " \
 			"fi; " \
 		"else " \
-			"bootz; " \
+			"booti; " \
 		"fi;\0" \
 	"usbloadimage=load usb 0 ${loadaddr} ${bootdir}/${bootfile}\0" \
 	"usbloadfdt=load usb 0 ${fdtaddr} ${bootdir}/${fdtfile}\0" \
