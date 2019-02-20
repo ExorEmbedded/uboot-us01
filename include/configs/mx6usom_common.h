@@ -174,7 +174,7 @@
 					"echo Gigabit not enabled ;" \
 				"fi; " \
 			"fi; \0 " \
-	"mmcloados=run mmcargs; " \
+	"mmcloados=run mmcargs; run findisolcpus; " \
 		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
 			"if run loadfdt; then " \
 				"run checkgigabit; " \
@@ -246,6 +246,9 @@
 		"tftp ${fdtaddr} ${fdtfile}; " \
 		"run netargs; " \
 		"bootz ${loadaddr} - ${fdtaddr}\0" \
+	"findisolcpus="\
+		"if test \"${isolcpus}\" != \"\"; then " \
+			"setenv bootargs ${bootargs} isolcpus=${isolcpus}; fi; \0" \
 	"findfdt="\
 		"if test $board_name = usom_etop7xx; then " \
 			"setenv fdtfile usom_etop7xx.dtb; fi; " \
