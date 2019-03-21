@@ -29,6 +29,13 @@ void spl_dram_init(void)
 	ddr_init(&dram_timing);
 }
 
+void board_boot_order(u32 *spl_boot_list)
+{
+	/* eMMC prior to sdcard */
+	spl_boot_list[0] = BOOT_DEVICE_MMC1;
+	spl_boot_list[1] = BOOT_DEVICE_MMC2;
+}
+
 #define I2C_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PE)
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 struct i2c_pads_info i2c_pad_info1 = {

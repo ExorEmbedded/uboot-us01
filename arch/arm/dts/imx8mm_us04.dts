@@ -31,12 +31,59 @@
 		mmc1 = &usdhc1;
 		mmc2 = &usdhc3;
     };
+
+	regulators {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+        reg_usb1_otg_vbus: usb1_regulator {
+            compatible = "regulator-fixed";
+            reg = <0>;
+            regulator-name = "usb1_vbus";
+            regulator-min-microvolt = <5000000>;
+            regulator-max-microvolt = <5000000>;
+            gpio = <&gpio1 12 0>;
+            enable-active-high;
+        };
+
+        reg_usb2_otg_vbus: usb2_regulator {
+            compatible = "regulator-fixed";
+            reg = <1>;
+            regulator-name = "usb2_vbus";
+            regulator-min-microvolt = <5000000>;
+            regulator-max-microvolt = <5000000>;
+            gpio = <&gpio1 14 0>;
+            enable-active-high;
+        };
+        
+        reg_rst_out: reset_out_regulator {
+            compatible = "regulator-fixed";
+            reg = <2>;
+            regulator-name = "reset_out";
+            regulator-min-microvolt = <3300000>;
+            regulator-max-microvolt = <3300000>;
+            gpio = <&gpio4 8 0>;
+            enable-active-high;
+            regulator-always-on;
+            regulator-boot-on;
+        };
+    };
+    
 };
 
 &iomuxc {
 	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog>;
 
 	imx8mm-evk {
+		pinctrl_hog: hoggrp {
+			fsl,pins = <
+                MX8MM_IOMUXC_GPIO1_IO12_GPIO1_IO12      0x1c4
+                MX8MM_IOMUXC_GPIO1_IO14_GPIO1_IO14      0x1c4
+                MX8MM_IOMUXC_SAI1_RXD6_GPIO4_IO8        0x1c4
+			>;
+		};
 
 		pinctrl_i2c1: i2c1grp {
 			fsl,pins = <
@@ -332,9 +379,13 @@
 };
 
 &usbotg1 {
+	dr_mode = "host";
+        vbus-supply = <&reg_usb1_otg_vbus>;
 	status = "okay";
 };
 
 &usbotg2 {
-	status = "okay";
+	dr_mode = "host";
+        vbus-supply = <&reg_usb2_otg_vbus>;
+/*	status = "okay"; */
 };

@@ -40,6 +40,14 @@ static iomux_v3_cfg_t const wdog_pads[] = {
 	IMX8MM_PAD_GPIO1_IO02_WDOG1_WDOG_B  | MUX_PAD_CTRL(WDOG_PAD_CTRL),
 };
 
+
+#define US04_RST_OUT_GPIO IMX_GPIO_NR(4, 8)
+#define US04_RST_GPIO_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_DSE1)
+
+static iomux_v3_cfg_t const us04_rst_pads[] = {
+	 IMX8MM_PAD_SAI1_RXD6_GPIO4_IO8 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+};
+
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
  */
@@ -81,6 +89,12 @@ int board_early_init_f(void)
 	imx_iomux_v3_setup_multiple_pads(wdog_pads, ARRAY_SIZE(wdog_pads));
 	set_wdog_reset(wdog);
 	imx_iomux_v3_setup_multiple_pads(uart_pads, ARRAY_SIZE(uart_pads));
+	
+	/* Set the US04 RESET_OUT signal to high */
+	imx_iomux_v3_setup_multiple_pads(us04_rst_pads, ARRAY_SIZE(us04_rst_pads));
+	gpio_request(US04_RST_OUT_GPIO, "us04_reset_out");
+	gpio_direction_output(US04_RST_OUT_GPIO, 1);
+
 	return 0;
 }
 
