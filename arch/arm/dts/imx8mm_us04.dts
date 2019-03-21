@@ -379,13 +379,13 @@
 };
 
 &usbotg1 {
-	dr_mode = "host";
-        vbus-supply = <&reg_usb1_otg_vbus>;
-	status = "okay";
+    dr_mode = "host";
+    vbus-supply = <&reg_usb1_otg_vbus>;
+    status = "okay";
 };
 
 &usbotg2 {
-	dr_mode = "host";
-        vbus-supply = <&reg_usb2_otg_vbus>;
-/*	status = "okay"; */
+    dr_mode = "host";
+    vbus-supply = <&reg_usb2_otg_vbus>;
+    status = "okay"; 
 };

@@ -124,6 +124,23 @@ int ft_board_setup(void *blob, bd_t *bd)
 }
 #endif
 
+
+#ifdef CONFIG_CI_UDC
+int board_usb_init(int index, enum usb_init_type init)
+{
+	imx8m_usb_power(index, true);
+
+	return 0;
+}
+
+int board_usb_cleanup(int index, enum usb_init_type init)
+{
+	imx8m_usb_power(index, false);
+
+	return 0;
+}
+#endif
+
 int board_init(void)
 {
 	return 0;
