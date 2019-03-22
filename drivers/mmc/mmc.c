@@ -932,19 +932,19 @@ static int mmc_startup(struct mmc *mmc)
 	if (!IS_SD(mmc) && (mmc->version >= MMC_VERSION_4)) {
 		/* check  ext_csd version and capacity */
 		err = mmc_send_ext_csd(mmc, ext_csd);
-		if (!err && (ext_csd[EXT_CSD_REV] >= 2)) {
+		if (!err && (ext_csd[EXT_CSD_REV] >= 2) &&
+			(mmc->ocr & OCR_ACCESS_MODE) == OCR_ACCESS_BY_SECTOR)  {
 			/*
 			 * According to the JEDEC Standard, the value of
-			 * ext_csd's capacity is valid if the value is more
-			 * than 2GB
+			 * ext_csd's capacity is valid if the device addresses
+			 * its memory by sector
 			 */
 			capacity = ext_csd[EXT_CSD_SEC_CNT] << 0
 					| ext_csd[EXT_CSD_SEC_CNT + 1] << 8
 					| ext_csd[EXT_CSD_SEC_CNT + 2] << 16
 					| ext_csd[EXT_CSD_SEC_CNT + 3] << 24;
 			capacity *= MMC_MAX_BLOCK_LEN;
-			if ((capacity >> 20) > 2 * 1024)
-				mmc->capacity_user = capacity;
+			mmc->capacity_user = capacity;
 		}
 
 		switch (ext_csd[EXT_CSD_REV]) {
