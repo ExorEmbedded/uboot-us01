@@ -148,7 +148,7 @@ int board_init(void)
 
 int board_mmc_get_env_dev(int devno)
 {
-	return devno - 1;
+	return CONFIG_SYS_MMC_ENV_DEV;
 }
 
 int mmc_map_to_kernel_blk(int devno)
