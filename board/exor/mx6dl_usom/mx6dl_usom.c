@@ -420,12 +420,19 @@ static int setup_pmic_voltages(void)
 			return -1;
 		}
 		
-		/* Set LPDDR2 voltage to 1.25V nominal */
-		value = 0x22;
+		/* Set LPDDR2 voltage to 1.275V nominal */
+		value = 0x23;
 		if (i2c_write(0x8, 0x3c, 1, &value, 1)) {
 			printf("Set LPDDR2 voltage error!\n");
 			return -1;
 		}
+		value = 0x23;
+		if (i2c_write(0x8, 0x43, 1, &value, 1)) {
+			printf("Set LPDDR2 voltage error!\n");
+			return -1;
+		}
+
+	  
 	}
 
 	return 0;
