@@ -86,7 +86,6 @@
 
 /* Initial environment variables */
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200\0" \
 	"altbootcmd="CFG_SYS_ALT_BOOTCOMMAND"\0"\
 	"bootlimit=3\0" \
 	"mmcautodetect=yes\0" \
@@ -192,6 +191,7 @@
 	
 #define CONFIG_BOOTCOMMAND \
 	"setenv mmcdev 0; " \
+	"setenv mmcroot /dev/mmcblk0p2 ro; " \
 	"run findfdt; " \
 	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
@@ -214,6 +214,7 @@
 #define CFG_SYS_ALT_BOOTCOMMAND \
 	"i2c mw 68 19 0; " \
 	"setenv mmcdev 0; " \
+	"setenv mmcroot /dev/mmcblk0p2 ro; " \
 	"run findfdt; " \
 	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
