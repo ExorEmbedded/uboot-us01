@@ -24,6 +24,7 @@
 #define ETOP705_VAL  120
 #define EXWARE_VAL   127
 #define NA16_VAL     128
+#define AB19_VAL     140
 
 /* System GPIOs */
 #define RXEN0_GPIO 37
