@@ -266,6 +266,8 @@
 			"setenv fdtfile usom_jsmartq.dtb; fi; " \
 		"if test $board_name = usom_jsmartttl; then " \
 			"setenv fdtfile usom_jsmartttl.dtb; fi; " \
+		"if test $board_name = usom_ta19; then " \
+			"setenv fdtfile usom_ta19.dtb; fi; " \
 		"if test $board_name = usom_undefined; then " \
 			"setenv fdtfile usom_undefined.dtb; fi; \0" 
 	

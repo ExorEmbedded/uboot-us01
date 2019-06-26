@@ -92,6 +92,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define JSMART_VAL    124
 #define JSMARTQ_VAL   125
 #define JSMARTTTL_VAL 126
+#define TA19_VAL      141
 
 #define RXEN0_GPIO IMX_GPIO_NR(6, 31)
 #define DXEN0_GPIO IMX_GPIO_NR(3, 14)
@@ -694,6 +695,10 @@ int board_late_init(void)
     DVIpluginDetect();
   }
   
+  /* For the TA19 target, the number of cores is forced to 2 */
+  if(hwcode==TA19_VAL)
+    run_command("setenv optargs maxcpus=2", 0);
+  
   if(hwcode==ETOP7XX_VAL)
     setenv("board_name", "usom_etop7xx"); 
   else if(hwcode==BE15A_VAL)
@@ -708,6 +713,8 @@ int board_late_init(void)
     setenv("board_name", "usom_jsmartq"); 
   else if(hwcode==JSMARTTTL_VAL)
     setenv("board_name", "usom_jsmartttl"); 
+  else if(hwcode==TA19_VAL)
+    setenv("board_name", "usom_ta19"); 
   else
   {
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
