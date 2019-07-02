@@ -93,6 +93,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define JSMARTQ_VAL   125
 #define JSMARTTTL_VAL 126
 #define TA19_VAL      141
+#define BE15B_VAL     142
 
 #define RXEN0_GPIO IMX_GPIO_NR(6, 31)
 #define DXEN0_GPIO IMX_GPIO_NR(3, 14)
@@ -714,7 +715,9 @@ int board_late_init(void)
   else if(hwcode==JSMARTTTL_VAL)
     setenv("board_name", "usom_jsmartttl"); 
   else if(hwcode==TA19_VAL)
-    setenv("board_name", "usom_ta19"); 
+    setenv("board_name", "usom_ta19");
+  else if(hwcode==BE15B_VAL)
+    setenv("board_name", "usom_be15b");
   else
   {
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
