@@ -422,13 +422,15 @@ static int setup_pmic_voltages(void)
 			return -1;
 		}
 		
-		/* Set LPDDR2 voltage to 1.275V nominal */
+		/* Set LPDDR2 voltage to 1.275V for DualLite, 1.3V for QuadCore */
 		value = 0x23;
+		if(CONFIG_DDR_MB == 2048)value = 0x24;
 		if (i2c_write(0x8, 0x3c, 1, &value, 1)) {
 			printf("Set LPDDR2 voltage error!\n");
 			return -1;
 		}
 		value = 0x23;
+		if(CONFIG_DDR_MB == 2048)value = 0x24;
 		if (i2c_write(0x8, 0x43, 1, &value, 1)) {
 			printf("Set LPDDR2 voltage error!\n");
 			return -1;
