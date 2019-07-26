@@ -668,15 +668,6 @@ int board_late_init(void)
   if (ret)
     return -1;
 #endif
-    
-  /* Set CAN_CLK_ROOT clock rate to 60Mhz to get a precise baud rate also at 800Kbit*/
-  {
-    struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
-    int reg;
-    reg = readl(&mxc_ccm->cscmr2);
-    reg &= ~(MXC_CCM_CSCMR2_CAN_CLK_SEL_MASK);
-    writel(reg, &mxc_ccm->cscmr2);
-  }
 		
   /* Get the system configuration from the I2C SEEPROM */
   if(read_eeprom())
