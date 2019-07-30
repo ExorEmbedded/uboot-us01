@@ -668,7 +668,17 @@ int board_late_init(void)
   if (ret)
     return -1;
 #endif
-		
+
+  /* BSP-1611: Set CAN_CLK_ROOT clock rate to 12Mhz to get a precise baud rate also at 800Kbit*/
+  {
+    struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+    int reg;
+    reg = readl(&mxc_ccm->cscmr2);
+    reg &= ~(MXC_CCM_CSCMR2_CAN_CLK_SEL_MASK);
+    reg |= (4 << MXC_CCM_CSCMR2_CAN_CLK_SEL_OFFSET);
+    writel(reg, &mxc_ccm->cscmr2);
+  }
+  
   /* Get the system configuration from the I2C SEEPROM */
   if(read_eeprom())
   {
