@@ -52,6 +52,7 @@ static struct cpsw_slave_data cpsw_slaves[];
   #define FAULT_GPIO (69)
   #define DL_GPIO (66) 
   #define USB0DRVVBUS_GPIO (18) 
+  #define USB1DRVVBUS_GPIO (109) 
   
 
 #if defined(CONFIG_SPL_BUILD)
@@ -255,6 +256,10 @@ int board_late_init(void)
   //Enable USB0 DRVVBUS
   gpio_request(USB0DRVVBUS_GPIO,"");
   gpio_direction_output(USB0DRVVBUS_GPIO,1);
+
+  //Enable USB1 DRVVBUS
+  gpio_request(USB1DRVVBUS_GPIO,"");
+  gpio_direction_output(USB1DRVVBUS_GPIO,1);
   
   //Green LED ON, RED OFF
   gpio_request(FAULT_GPIO ,"");
