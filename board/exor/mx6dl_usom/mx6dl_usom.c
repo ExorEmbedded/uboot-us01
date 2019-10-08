@@ -105,6 +105,21 @@ DECLARE_GLOBAL_DATA_PTR;
 #define WDOG1WRSRREG (0x20bc004)
 #define SNVSLPCRREG  (0x20cc038)
 
+#ifdef CONFIG_BE15PLAT
+#define TSC2004_RSTGPIO IMX_GPIO_NR(2, 3)
+iomux_v3_cfg_t const tsc2004_rst_pads[] = {
+	MX6_PAD_NANDF_D3__GPIO2_IO03 | MUX_PAD_CTRL(NO_PAD_CTRL),  /* Touch RST for BE15 platform */
+};
+
+static void tsc2004_reset(void)
+{
+  imx_iomux_v3_setup_multiple_pads(tsc2004_rst_pads, ARRAY_SIZE(tsc2004_rst_pads));
+  gpio_request(TSC2004_RSTGPIO,"");
+  gpio_direction_output(TSC2004_RSTGPIO,0);
+  mdelay(1);
+}
+#endif
+
 void ena_rs232phy(void);
 static void check_wdog1_or_sw_reset(void);
 
@@ -661,6 +676,11 @@ int board_late_init(void)
   
   /* Check the reset cause and perform required actions */
   check_wdog1_or_sw_reset();
+
+#ifdef CONFIG_BE15PLAT
+  /* On BE15 target, keep the tsc2004 controller in reset */
+  tsc2004_reset();
+#endif
   
 #ifdef CONFIG_SYS_I2C_MXC
   setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
