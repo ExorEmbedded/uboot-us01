@@ -30,6 +30,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define WDOG_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_ODE | PAD_CTL_PUE | PAD_CTL_PE)
 
 #define US04JSMART_VAL    139
+#define US04ETOPXX_VAL    145
 
 static iomux_v3_cfg_t const uart_pads[] = {
 	IMX8MM_PAD_SAI2_RXC_UART1_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
@@ -200,6 +201,10 @@ int board_late_init(void)
   if(hwcode==US04JSMART_VAL)
   {
     env_set("board_name", "us04_jsmart"); 
+  }
+  else if(hwcode==US04ETOPXX_VAL)
+  {
+    env_set("board_name", "us04_etopxx"); 
   }
   else
   {

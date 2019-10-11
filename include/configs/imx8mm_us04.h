@@ -186,9 +186,11 @@
 	"findfdt="\
 		"if test $board_name = us04_jsmart; then " \
 			"setenv fdtfile us04_jsmart.dtb; fi; " \
+		"if test $board_name = us04_etopxx; then " \
+			"setenv fdtfile us04_etopxx.dtb; fi; " \
 		"if test $board_name = usom_undefined; then " \
 			"setenv fdtfile usom_undefined.dtb; fi; \0" 
-	
+			
 #define CONFIG_BOOTCOMMAND \
 	"setenv mmcdev 0; " \
 	"setenv mmcroot /dev/mmcblk0p2 ro; " \
