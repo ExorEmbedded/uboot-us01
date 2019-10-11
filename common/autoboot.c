@@ -271,6 +271,14 @@ static int abortboot(int bootdelay)
 		gd->flags &= ~GD_FLG_SILENT;
 #endif
 
+#ifdef CONFIG_CMD_I2CHWCFG
+	if (abort)
+	{
+		extern void ena_rs232phy(void);
+		ena_rs232phy();
+	}
+#endif
+
 	return abort;
 }
 

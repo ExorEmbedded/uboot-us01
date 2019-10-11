@@ -42,11 +42,24 @@ static iomux_v3_cfg_t const wdog_pads[] = {
 
 
 #define US04_RST_OUT_GPIO IMX_GPIO_NR(4, 8)
+#define US04_DXEN0_GPIO   IMX_GPIO_NR(1, 1)
 #define US04_RST_GPIO_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_DSE1)
 
 static iomux_v3_cfg_t const us04_rst_pads[] = {
 	 IMX8MM_PAD_SAI1_RXD6_GPIO4_IO8 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+	 IMX8MM_PAD_GPIO1_IO01_GPIO1_IO1 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
 };
+
+#ifdef CONFIG_CMD_I2CHWCFG
+void ena_rs232phy(void)
+{
+  gpio_request(US04_DXEN0_GPIO, "us04_dxen0_out");
+  gpio_direction_output(US04_DXEN0_GPIO, 1);
+  udelay(1000);
+}
+#else
+void ena_rs232phy(void){}
+#endif
 
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
@@ -161,15 +174,16 @@ int board_late_init(void)
 #if (defined(CONFIG_CMD_I2CHWCFG))  
   char* tmp;
   unsigned long hwcode = 0;
-  unsigned long rs232phyena = 0;
 #endif
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
 #endif
+	
 #if (defined(CONFIG_CMD_I2CHWCFG))  
   /* Get the system configuration from the I2C SEEPROM */
   if(read_eeprom())
   {
+	ena_rs232phy();
     printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
     USBgethwcfg();
   }
@@ -189,6 +203,7 @@ int board_late_init(void)
   }
   else
   {
+	ena_rs232phy();
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
     env_set("board_name", "usom_undefined");
   }
