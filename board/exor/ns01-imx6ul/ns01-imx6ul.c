@@ -152,13 +152,15 @@ int dram_init(void)
 	return 0;
 }
 
+static iomux_v3_cfg_t const pa18_pads[] = {
+	MX6_PAD_CSI_DATA04__GPIO4_IO25 | MUX_PAD_CTRL(NO_PAD_CTRL), //This is the SPI1 CLk: set it as GPIO to avoid glitches during SPI kernel init on PA18
+};
+
 static iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_UART1_TX_DATA__UART1_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
 	MX6_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 	MX6_PAD_CSI_DATA06__GPIO4_IO27 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
-
-
 
 static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX6_PAD_SD1_CLK__USDHC1_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -385,6 +387,10 @@ int board_late_init(void)
     puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
     setenv("board_name", "usom_undefined");
   }
+  
+  /* For the PA18 target, set the specific pinmux to avoid glitches when kernel starts */
+  if(hwcode==NS01PA18_VAL)
+    imx_iomux_v3_setup_multiple_pads(pa18_pads, ARRAY_SIZE(pa18_pads));
   
   /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
   run_command("setenv skipbsp1 0", 0);
