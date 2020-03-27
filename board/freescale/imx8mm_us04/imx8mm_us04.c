@@ -44,11 +44,13 @@ static iomux_v3_cfg_t const wdog_pads[] = {
 
 #define US04_RST_OUT_GPIO IMX_GPIO_NR(4, 8)
 #define US04_DXEN0_GPIO   IMX_GPIO_NR(1, 1)
+#define US04_RXEN0_GPIO   IMX_GPIO_NR(1, 3)
 #define US04_RST_GPIO_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_DSE1)
 
 static iomux_v3_cfg_t const us04_rst_pads[] = {
-	 IMX8MM_PAD_SAI1_RXD6_GPIO4_IO8 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
-	 IMX8MM_PAD_GPIO1_IO01_GPIO1_IO1 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+    IMX8MM_PAD_SAI1_RXD6_GPIO4_IO8 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+    IMX8MM_PAD_GPIO1_IO01_GPIO1_IO1 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+    IMX8MM_PAD_GPIO1_IO03_GPIO1_IO3 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
 };
 
 #ifdef CONFIG_CMD_I2CHWCFG
@@ -173,50 +175,53 @@ int mmc_map_to_kernel_blk(int devno)
 int board_late_init(void)
 {
 #if (defined(CONFIG_CMD_I2CHWCFG))  
-  char* tmp;
-  unsigned long hwcode = 0;
+    char* tmp;
+    unsigned long hwcode = 0;
+
+    gpio_request(US04_RXEN0_GPIO, "us04_rxen0_out");
+    gpio_direction_output(US04_RXEN0_GPIO, 1);
 #endif
 #ifdef CONFIG_ENV_IS_IN_MMC
-	board_late_mmc_env_init();
+    board_late_mmc_env_init();
 #endif
 	
 #if (defined(CONFIG_CMD_I2CHWCFG))  
-  /* Get the system configuration from the I2C SEEPROM */
-  if(read_eeprom())
-  {
-	ena_rs232phy();
-    printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
-    USBgethwcfg();
-  }
- 
-  /* Set the "board_name" env. variable according with the "hw_code" */
-  tmp = env_get("hw_code");
-  if(!tmp)
-  {
-    puts ("WARNING: 'hw_code' environment var not found!\n");
-  }
-  else
-    hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
-  
-  if(hwcode==US04JSMART_VAL)
-  {
-    env_set("board_name", "us04_jsmart"); 
-  }
-  else if(hwcode==US04ETOPXX_VAL)
-  {
-    env_set("board_name", "us04_etopxx"); 
-  }
-  else
-  {
-	ena_rs232phy();
-    puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
-    env_set("board_name", "usom_undefined");
-  }
-  /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
-  run_command("setenv skipbsp1 0", 0);
-  run_command("mmc dev 0", 0);
-  run_command("mmc rescan", 0);
-  run_command("if test -e mmc 0:1 /$0030d8$.bin; then setenv skipbsp1 1; fi", 0);
+    /* Get the system configuration from the I2C SEEPROM */
+    if(read_eeprom())
+    {
+        ena_rs232phy();
+        printf("Failed to read the HW cfg from the I2C SEEPROM: trying to load it from USB ...\n");
+        USBgethwcfg();
+    }
+
+    /* Set the "board_name" env. variable according with the "hw_code" */
+    tmp = env_get("hw_code");
+    if(!tmp)
+    {
+        puts ("WARNING: 'hw_code' environment var not found!\n");
+    }
+    else
+        hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
+
+    if(hwcode==US04JSMART_VAL)
+    {
+        env_set("board_name", "us04_jsmart");
+    }
+    else if(hwcode==US04ETOPXX_VAL)
+    {
+        env_set("board_name", "us04_etopxx"); 
+    }
+    else
+    {
+        ena_rs232phy();
+        puts ("WARNING: unknowm carrier hw code; using 'usom_undefined' board name. \n");
+        env_set("board_name", "usom_undefined");
+    }
+    /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
+    run_command("setenv skipbsp1 0", 0);
+    run_command("mmc dev 0", 0);
+    run_command("mmc rescan", 0);
+    run_command("if test -e mmc 0:1 /$0030d8$.bin; then setenv skipbsp1 1; fi", 0);
 #endif    
 	return 0;
 }
