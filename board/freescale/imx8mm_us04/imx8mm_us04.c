@@ -202,7 +202,15 @@ int board_late_init(void)
     }
     else
         hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
-
+		
+	/* For eTOP7xx panels, pass the mac addresses for the additional PCIe eth ports via cmdline */
+	if((hwcode==US04ETOPXX_VAL))
+	{
+		if(getenv("eth1addr"))
+			if(getenv("eth2addr"))
+			run_command("setenv optargs pcie_tse1addr=${eth1addr} pcie_tse2addr=${eth2addr}", 0);
+	}
+  
     if(hwcode==US04JSMART_VAL)
     {
         env_set("board_name", "us04_jsmart");
