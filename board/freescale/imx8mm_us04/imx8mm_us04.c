@@ -31,6 +31,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define US04JSMART_VAL    139
 #define US04ETOPXX_VAL    145
+#define US04WU10_VAL      147
 
 static iomux_v3_cfg_t const uart_pads[] = {
 	IMX8MM_PAD_SAI2_RXC_UART1_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
@@ -218,6 +219,10 @@ int board_late_init(void)
     else if(hwcode==US04ETOPXX_VAL)
     {
         env_set("board_name", "us04_etopxx"); 
+    }
+    else if(hwcode==US04WU10_VAL)
+    {
+        env_set("board_name", "us04_wu10"); 
     }
     else
     {
