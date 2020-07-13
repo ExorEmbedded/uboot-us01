@@ -232,9 +232,12 @@ int board_late_init(void)
     }
     /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
     run_command("setenv skipbsp1 0", 0);
-    run_command("mmc dev 0", 0);
-    run_command("mmc rescan", 0);
-    run_command("if test -e mmc 0:1 /$0030d8$.bin; then setenv skipbsp1 1; fi", 0);
+	if( (hwcode != US04JSMART_VAL) && (hwcode != US04WU10_VAL) )
+	{
+		run_command("mmc dev 0", 0);
+		run_command("mmc rescan", 0);
+		run_command("if test -e mmc 0:1 /$0030d8$.bin; then setenv skipbsp1 1; fi", 0);
+	}
 #endif    
 	return 0;
 }
