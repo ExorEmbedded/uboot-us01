@@ -82,6 +82,7 @@
                 MX8MM_IOMUXC_GPIO1_IO12_GPIO1_IO12      0x1c4
                 MX8MM_IOMUXC_GPIO1_IO14_GPIO1_IO14      0x1c4
                 MX8MM_IOMUXC_SAI1_RXD6_GPIO4_IO8        0x1c4
+                MX8MM_IOMUXC_SD2_CD_B_GPIO2_IO12        0x141
 			>;
 		};
 

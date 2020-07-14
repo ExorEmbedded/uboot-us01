@@ -197,8 +197,10 @@
 	"setenv mmcdev 0; " \
 	"setenv mmcroot /dev/mmcblk0p2 ro; " \
 	"run findfdt; " \
+	"if test $sd_detected = 1; then " \
 	"echo Try booting Linux from SD-card...;" \
 	"run mmcboot;" \
+	"fi; " \
 	"if test $skipbsp1 = 0; then " \
 	"echo Try booting Linux from EMMC, main BSP...;" \
 	"setenv mmcdev 1; " \

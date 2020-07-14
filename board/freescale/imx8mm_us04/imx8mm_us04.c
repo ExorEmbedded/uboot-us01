@@ -46,6 +46,7 @@ static iomux_v3_cfg_t const wdog_pads[] = {
 #define US04_RST_OUT_GPIO IMX_GPIO_NR(4, 8)
 #define US04_DXEN0_GPIO   IMX_GPIO_NR(1, 1)
 #define US04_RXEN0_GPIO   IMX_GPIO_NR(1, 3)
+#define US04_SDCD_GPIO    IMX_GPIO_NR(2, 12)
 #define US04_RST_GPIO_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_DSE1)
 
 static iomux_v3_cfg_t const us04_rst_pads[] = {
@@ -232,8 +233,16 @@ int board_late_init(void)
     }
     /* Check if file $0030d8$.bin exists on the 1st partition of the SD-card and, if so, skips booting the mainOS */
     run_command("setenv skipbsp1 0", 0);
-	if( (hwcode != US04JSMART_VAL) && (hwcode != US04WU10_VAL) )
+	
+	/* Check the SD_CD status; the SD-card will be accessed during boot sequence only if SD-card detected */
+	gpio_request(US04_SDCD_GPIO , "us04_sdcd_gpio");
+	if(gpio_get_value(US04_SDCD_GPIO))
+	{ /* SD-card not present */
+		run_command("setenv sd_detected 0", 0);
+	}
+	else
 	{
+		run_command("setenv sd_detected 1", 0);
 		run_command("mmc dev 0", 0);
 		run_command("mmc rescan", 0);
 		run_command("if test -e mmc 0:1 /$0030d8$.bin; then setenv skipbsp1 1; fi", 0);
