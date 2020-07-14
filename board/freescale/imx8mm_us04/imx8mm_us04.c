@@ -183,9 +183,6 @@ int board_late_init(void)
     gpio_request(US04_RXEN0_GPIO, "us04_rxen0_out");
     gpio_direction_output(US04_RXEN0_GPIO, 1);
 #endif
-#ifdef CONFIG_ENV_IS_IN_MMC
-    board_late_mmc_env_init();
-#endif
 	
 #if (defined(CONFIG_CMD_I2CHWCFG))  
     /* Get the system configuration from the I2C SEEPROM */
