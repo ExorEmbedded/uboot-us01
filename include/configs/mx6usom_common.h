@@ -270,6 +270,8 @@
 			"setenv fdtfile usom_ta19.dtb; fi; " \
 		"if test $board_name = usom_be15b; then " \
 			"setenv fdtfile usom_be15b.dtb; fi; " \
+		"if test $board_name = usom_ta19_dl; then " \
+			"setenv fdtfile usom_ta19_dl.dtb; fi; " \
 		"if test $board_name = usom_undefined; then " \
 			"setenv fdtfile usom_undefined.dtb; fi; \0" 
 	
