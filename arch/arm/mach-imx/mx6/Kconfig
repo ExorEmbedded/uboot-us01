@@ -670,6 +670,14 @@ config TARGET_BRPPT2
           Support
           B&R BRPPT2 platform
           based on Freescale's iMX6 SoC
+
+config TARGET_MX6DL_USOM
+	bool "MX6DL_USOM"
+	select BOARD_LATE_INIT
+	select MX6DL
+	select SYS_I2C_MXC
+	select MXC_UART
+	
 endchoice
 
 config SYS_SOC
@@ -729,5 +737,6 @@ source "board/udoo/neo/Kconfig"
 source "board/wandboard/Kconfig"
 source "board/warp/Kconfig"
 source "board/BuR/brppt2/Kconfig"
+source "board/exor/mx6dl_usom/Kconfig"
 
 endif
