@@ -32,7 +32,7 @@
 #define CONFIG_CMD_I2CHWCFG
 #define CONFIG_HAVEPRGUART
 #define CONFIG_SYS_I2C_EEPROM_ADDR 0x54
-#define CONFIG_SYS_I2C_ADPADD 0x56
+#define DEF_SYS_I2C_ADPADD 0x56
 
 #define CONFIG_CMDLINE_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
@@ -279,8 +279,6 @@
 	"setenv bootpart 1:2; " \
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
 	"run mmcboot;" 
-	
-#define CONFIG_ANDROID_BOOTCOMMAND "echo Android boot not yet available;\0" 
 	
 #define CONFIG_ARP_TIMEOUT     200UL
 
