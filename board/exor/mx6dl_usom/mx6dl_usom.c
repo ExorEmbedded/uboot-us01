@@ -509,7 +509,6 @@ int board_mmc_init(bd_t *bis)
 	* mmc1                    USDHC4 (EMMC)
 	*/
 	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
-		printf("board_mmc_init %d\n", i); //!!!
 		switch (i) {
 		case 0:
 			imx_iomux_v3_setup_multiple_pads(usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
@@ -603,7 +602,6 @@ int board_init(void)
 {
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
-//	gd->flags |= GD_FLG_SILENT;
 	return 0;
 }
 
@@ -623,25 +621,13 @@ int board_late_init(void)
   unsigned long rs232phyena = 0;
   unsigned long jumperflagsl = 0;
   
-//  env_set("silent", "1"); 
-//  gd->flags |= GD_FLG_SILENT;
-
 #ifdef CONFIG_CMD_BMODE
   add_board_boot_modes(board_boot_modes);
 #endif
-
-  /* Enable the rs232 phy based on "rs232_txen" environment variable */
-  tmp = env_get("rs232_txen");
-  if(tmp)
-  {
-    rs232phyena = (simple_strtoul (tmp, NULL, 10))&0xff;
-    if(rs232phyena != 0)
-    {
-      ena_rs232phy();
-    }
-  }
   
-  ena_rs232phy(); //!!!
+  /* Enable the UART console phy unconditionally
+   */
+  ena_rs232phy();
   
   /* Check the reset cause and perform required actions */
   //!!!check_wdog1_or_sw_reset();
@@ -812,7 +798,11 @@ int board_ehci_hcd_init(int port)
 }
 #endif
 
-#ifdef CONFIG_HAVEPRGUART
+/*
+ * NOTE: This is required to enable the UART console phy on Exor eval. kit.
+ * It can be removed if the carrier board does not use a programmable UART phy 
+ * for the console.
+ */
 void ena_rs232phy(void)
 {
   gpio_request(RXEN0_GPIO,"");
@@ -824,10 +814,6 @@ void ena_rs232phy(void)
   gpio_request(MODE0_GPIO,"");
   gpio_direction_output(MODE0_GPIO,0);
   
-//  run_command("setenv silent", 0);
-//  gd->flags &= ~GD_FLG_SILENT;
   udelay(1000);
 }
-#else
-void ena_rs232phy(void){}
-#endif
+

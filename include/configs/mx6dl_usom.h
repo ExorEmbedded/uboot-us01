@@ -11,22 +11,9 @@
 
 #define CONFIG_MACH_TYPE	3529
 #define CONFIG_MXC_UART_BASE	UART1_BASE
-#define CONFIG_CONSOLE_DEV		"ttymxc0"
 #define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* SDHC3 */
 
-/* 
- * Silent console option
- */
-//#define CONFIG_SILENT_CONSOLE
-//#define CONFIG_SILENT_CONSOLE_UPDATE_ON_SET
-//#define CONFIG_SILENT_U_BOOT_ONLY
-//#define CONFIG_SYS_DEVICE_NULLDEV
-
 #include "mx6usom_common.h"
-//#include <asm/imx-common/gpio.h>
-
-#undef CONFIG_MFG_NAND_PARTITION
-#define CONFIG_MFG_NAND_PARTITION ""
 
 #undef CONFIG_SYS_USE_SPINOR
 #undef CONFIG_SYS_USE_EIMNOR
@@ -34,7 +21,6 @@
 #undef CONFIG_SPLASH_SCREEN
 
 /* USB Configs */
-#define CONFIG_USB_EHCI
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
 #define CONFIG_MXC_USB_FLAGS   0

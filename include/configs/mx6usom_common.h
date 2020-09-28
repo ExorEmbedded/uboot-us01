@@ -20,17 +20,11 @@
 #include "mx6_common.h"
 #include <linux/sizes.h>
 
-#define CONFIG_SYS_GENERIC_BOARD
-
-//#include <asm/arch/imx-regs.h>
-//#include <asm/imx-common/gpio.h>
-
 /* We do not want a dedicated boot sequence if booting from USB
  */
 #undef is_boot_from_usb
 
 #define CONFIG_CMD_I2CHWCFG
-#define CONFIG_HAVEPRGUART
 #define CONFIG_SYS_I2C_EEPROM_ADDR 0x54
 #define DEF_SYS_I2C_ADPADD 0x56
 
@@ -45,7 +39,6 @@
 /* MMC Configs */
 #define CONFIG_SYS_FSL_ESDHC_ADDR      0
 
-#define CONFIG_GENERIC_MMC
 #define CONFIG_BOUNCE_BUFFER
 
 #define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
@@ -81,16 +74,14 @@
 #define CONFIG_SYS_TEXT_BASE           0x17800000
 #define CONFIG_SYS_MMC_IMG_LOAD_PART	1
 
-#define CONFIG_MFG_NAND_PARTITION ""
-
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"altbootcmd="CONFIG_SYS_ALT_BOOTCOMMAND"\0"\
+	"altbootcmd="CFG_SYS_ALT_BOOTCOMMAND"\0"\
 	"bootlimit=3\0" \
 	"loadaddr=0x12000000\0" \
 	"fdtaddr=0x18000000\0" \
 	"fdt_high=0xffffffff\0" \
 	"boot_fdt=yes\0" \
-	"smp=" CONFIG_SYS_NOSMP "\0"\
+	"smp=" CFG_SYS_NOSMP "\0"\
 	"skipbsp1=0\0" \
 	"enable_gigabit=0\0" \
 	"bootpart=0:1\0" \
@@ -265,7 +256,7 @@
 	"setenv mmcroot /dev/mmcblk1p2 ro; " \
 	"run mmcboot;" 
 
-#define CONFIG_SYS_ALT_BOOTCOMMAND \
+#define CFG_SYS_ALT_BOOTCOMMAND \
 	"i2c mw 68 19 0; " \
 	"setenv mmcdev 0; " \
 	"run findfdt; " \
@@ -283,7 +274,6 @@
 #define CONFIG_ARP_TIMEOUT     200UL
 
 /* Miscellaneous configurable options */
-#define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_PROMPT_HUSH_PS2     "> "
 #undef CONFIG_SYS_CBSIZE
 #define CONFIG_SYS_CBSIZE              1024
@@ -301,8 +291,6 @@
 
 #define CONFIG_SYS_LOAD_ADDR           CONFIG_LOADADDR
 
-#define CONFIG_STACKSIZE               (128 * 1024)
-
 /* Physical Memory Map */
 // #define CONFIG_NR_DRAM_BANKS           1
 #define PHYS_SDRAM                     MMDC0_ARB_BASE_ADDR
@@ -316,11 +304,8 @@
 #define CONFIG_SYS_INIT_SP_ADDR \
 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
-/* FLASH and environment organization */
-#define CONFIG_SYS_NO_FLASH
-
-#ifndef CONFIG_SYS_NOSMP
-#define CONFIG_SYS_NOSMP
+#ifndef CFG_SYS_NOSMP
+#define CFG_SYS_NOSMP
 #endif
 
 /* DMA stuff, needed for GPMI/MXS NAND support */
@@ -334,12 +319,6 @@
 #define CONFIG_CMD_I2C
 #define CONFIG_SYS_I2C
 #define CONFIG_SYS_I2C_SPEED		100000
-
-#ifdef CONFIG_MX6DL
-#define CONFIG_IPUV3_CLK 198000000
-#else
-#define CONFIG_IPUV3_CLK 264000000
-#endif
 
 #if defined(CONFIG_ANDROID_SUPPORT)
 #include "mx6sabreandroid_common.h"
