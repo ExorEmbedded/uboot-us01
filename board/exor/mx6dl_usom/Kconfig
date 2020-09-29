@@ -13,3 +13,19 @@ config SYS_CONFIG_NAME
 	default "mx6dl_usom"
 
 endif
+
+if TARGET_MX6Q_USOM
+
+config SYS_BOARD
+	default "mx6dl_usom"
+
+config SYS_VENDOR
+	default "exor"
+
+config SYS_SOC
+	default "mx6"
+
+config SYS_CONFIG_NAME
+	default "mx6dl_usom"
+
+endif

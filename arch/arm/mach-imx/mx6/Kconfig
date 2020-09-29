@@ -677,6 +677,13 @@ config TARGET_MX6DL_USOM
 	select MX6DL
 	select SYS_I2C_MXC
 	select MXC_UART
+
+config TARGET_MX6Q_USOM
+	bool "MX6DL_USOM"
+	select BOARD_LATE_INIT
+	select MX6Q
+	select SYS_I2C_MXC
+	select MXC_UART
 	
 endchoice
 
