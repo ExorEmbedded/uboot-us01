@@ -166,23 +166,19 @@ static void check_wdog1_or_sw_reset(void)
  */
 static int USBgethwcfg(void)
 {
-  
   printf("Trying to get the HW cfg from USB stick...\n");
-  
   run_command("usb stop", 0);
   run_command("usb reset", 0);
   run_command("setenv filesize 0", 0);
   run_command("fatload usb 0 ${loadaddr} hwcfg.txt", 0);
   run_command("env import -t ${loadaddr} ${filesize}", 0);
   run_command("usb stop", 0);
-  
   return 0;
 }
 
 int dram_init(void)
 {
 	gd->ram_size = ((ulong)CONFIG_DDR_MB * 1024 * 1024);
-
 	return 0;
 }
 
@@ -416,8 +412,6 @@ static int setup_pmic_voltages(void)
 			printf("Set LPDDR2 voltage error!\n");
 			return -1;
 		}
-
-	  
 	}
 
 	return 0;
@@ -425,7 +419,7 @@ static int setup_pmic_voltages(void)
 
 #ifdef CONFIG_LDO_BYPASS_CHECK
 void ldo_mode_set(int ldo_bypass)
-{
+{ 
 	unsigned char value;
 	/* increase VDDARM/VDDSOC to support 1.2G chip */
 	if (check_1_2G()) {
@@ -530,7 +524,6 @@ int board_mmc_init(bd_t *bis)
 		if (fsl_esdhc_initialize(bis, &usdhc_cfg[i]))
 			printf("Warning: failed to initialize mmc dev %d\n", i);
 	}
-
 	return 0;
 }
 
