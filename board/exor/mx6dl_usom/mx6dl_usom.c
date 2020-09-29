@@ -611,8 +611,6 @@ int board_late_init(void)
   int ret;
   char* tmp;
   unsigned long hwcode = 0;
-  unsigned long rs232phyena = 0;
-  unsigned long jumperflagsl = 0;
   
 #ifdef CONFIG_CMD_BMODE
   add_board_boot_modes(board_boot_modes);
@@ -623,7 +621,7 @@ int board_late_init(void)
   ena_rs232phy();
   
   /* Check the reset cause and perform required actions */
-  //!!!check_wdog1_or_sw_reset();
+  check_wdog1_or_sw_reset();
 
 #ifdef CONFIG_BE15PLAT
   /* On BE15 target, keep the tsc2004 controller in reset */
