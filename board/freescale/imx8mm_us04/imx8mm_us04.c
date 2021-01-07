@@ -202,12 +202,16 @@ int board_late_init(void)
     else
         hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
 
-    /* For eTOP7xx panels, pass the mac addresses for the additional PCIe eth ports via cmdline */
+    /* For eTOP7xx panels... 
+	 * 1: pass the mac addresses for the additional PCIe eth ports via cmdline 
+	 * 2: unbind the UART4 core from the M4 CPU domain */
     if((hwcode==US04ETOPXX_VAL))
     {
         if(env_get("eth1addr"))
             if(env_get("eth2addr"))
                 run_command("setenv optargs pcie_tse1addr=${eth1addr} pcie_tse2addr=${eth2addr}", 0);
+			
+		run_command("mw.l 0x303d0518 0xff", 0);
     }
   
     if(hwcode==US04JSMART_VAL)
