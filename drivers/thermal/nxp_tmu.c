@@ -106,12 +106,17 @@ static int read_temperature(struct udevice *dev, int *temp)
 	struct nxp_tmu_plat *pdata = dev_get_platdata(dev);
 	ulong drv_data = dev_get_driver_data(dev);
 	u32 val;
+	int retry=0;
 
 	do {
 		if (drv_data & FLAGS_VER2)
 			val = readl(&pdata->regs->regs_v2.tritsr);
 		else
 			val = readl(&pdata->regs->regs_v1.site[pdata->id].tritsr);
+		
+		if(retry++ > 10)
+			val = 0x80000000; //Force to exit the loop with 0 reading if timeout (ie: temperature < 0 deg Celsius)
+		mdelay(1);
 	} while (!(val & 0x80000000));
 
 	*temp = (val & 0xff) * 1000;
