@@ -121,6 +121,7 @@ static void tsc2004_reset(void)
 
 void ena_rs232phy(void);
 static void check_wdog1_or_sw_reset(void);
+static void etop7xx_qspi_flash_reset(void);
 
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
@@ -148,6 +149,7 @@ static void check_wdog1_or_sw_reset(void)
   {
     //WE are here due to a SW or WDT reset ... need a clean POR sequence through the PMIC_ON_REQ pin. 
     u32 val;
+    etop7xx_qspi_flash_reset();
     printf("SW or WDT reset detected, performing POR...\n");
     mdelay (10);
     val = __raw_readl(SNVSLPCRREG);
@@ -267,6 +269,103 @@ iomux_v3_cfg_t const usdhc4_pads[] = {
 	MX6_PAD_SD4_DAT6__SD4_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD4_DAT7__SD4_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 };
+
+/* SPI pads, used to reset the QSPI Flash on etop7xx panels
+ * in case of SW restart
+ */
+iomux_v3_cfg_t const spi_pads[] = {
+    MX6_PAD_CSI0_VSYNC__GPIO5_IO21 | MUX_PAD_CTRL(NO_PAD_CTRL), //SEL_MUX
+    MX6_PAD_CSI0_MCLK__GPIO5_IO19 | MUX_PAD_CTRL(NO_PAD_CTRL),  //QSPI_CS
+    MX6_PAD_EIM_D16__GPIO3_IO16 | MUX_PAD_CTRL(NO_PAD_CTRL),    //SCLK
+    MX6_PAD_EIM_D18__GPIO3_IO18 | MUX_PAD_CTRL(NO_PAD_CTRL),    //SPI_MOSI
+};
+
+#define SPI1_CLK  (IMX_GPIO_NR(3, 16))
+#define SPI1_SIMO (IMX_GPIO_NR(3, 18))
+#define SPI1_CSF  (IMX_GPIO_NR(5, 19))
+#define SEL_MUX   (IMX_GPIO_NR(5, 21))
+
+/* Resets the qspi flash on etop7xxq systems only */
+static void etop7xx_qspi_flash_reset(void)
+{
+  unsigned char in = 0x9f;
+  int i;
+  char* tmp;
+  unsigned long hwcode = 0;
+  
+  /* Check if we are an etop7xxq board and exit if no */
+  setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
+  i2c_set_bus_num(2);
+  read_eeprom();
+  tmp = getenv("hw_code");
+  if(tmp)
+    hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
+  
+  if(hwcode!=ETOP7XXQ_VAL)
+    return;
+
+  /* We are an etop7xxq board: do qspi flash reset */
+  imx_iomux_v3_setup_multiple_pads(spi_pads, ARRAY_SIZE(spi_pads));
+  gpio_direction_output(SPI1_CLK, 0);
+  gpio_direction_output(SPI1_SIMO, 0);
+  gpio_direction_output(SPI1_CSF, 1);
+  gpio_direction_output(SEL_MUX, 1);
+  mdelay(2);
+  
+  //1) Send RESET enable cmd
+  in = 0x66;
+  gpio_set_value(SPI1_CSF, 0);
+  mdelay(1);
+
+   //Write cmd
+  for(i=0; i< 8; i++)
+  {
+    if(in & 0x80)
+      gpio_set_value(SPI1_SIMO, 1);
+    else
+     gpio_set_value(SPI1_SIMO, 0);
+    
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 1);
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 0);
+    in = in << 1;
+  }
+  
+  mdelay(1);
+  gpio_set_value(SPI1_CSF, 1);
+  mdelay(1);
+  
+  //1) Send RESET cmd
+  in = 0x99;
+  gpio_set_value(SPI1_CSF, 0);
+  mdelay(1);
+
+   //Write cmd
+  for(i=0; i< 8; i++)
+  {
+    if(in & 0x80)
+      gpio_set_value(SPI1_SIMO, 1);
+    else
+     gpio_set_value(SPI1_SIMO, 0);
+    
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 1);
+    mdelay(1);
+    gpio_set_value(SPI1_CLK, 0);
+    in = in << 1;
+  }
+  
+  mdelay(1);
+  gpio_set_value(SPI1_CSF, 1);
+  mdelay(1);
+  
+  //Done: set SEL_MUX to low
+  gpio_set_value(SEL_MUX, 0);
+  mdelay(1);
+}
+
+
 
 
 #ifdef CONFIG_SYS_I2C_MXC
