@@ -306,10 +306,17 @@ const char *bootdelay_process(void)
 #ifdef CONFIG_BOOTCOUNT_LIMIT
 	unsigned long bootcount = 0;
 	unsigned long bootlimit = 0;
+#if (defined(CONFIG_CMD_I2CHWCFG))  
+	unsigned long hwcode;
+#endif	
 #endif /* CONFIG_BOOTCOUNT_LIMIT */
 
 #ifdef CONFIG_BOOTCOUNT_LIMIT
 	bootcount = bootcount_load();
+#if (defined(CONFIG_CMD_I2CHWCFG))  
+    hwcode = env_get_ulong("hw_code", 10, 0);
+	if(hwcode != 147)
+#endif	
 	bootcount++;
 	bootcount_store(bootcount);
 	env_set_ulong("bootcount", bootcount);
