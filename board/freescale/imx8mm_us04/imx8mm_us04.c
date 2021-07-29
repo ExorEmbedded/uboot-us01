@@ -33,6 +33,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define US04ETOPXX_VAL    145
 #define US04WU10_VAL      147
 
+#if defined(CONFIG_TARGET_IMX8MM_US04)
+/* Specific code for the US04 target */
+#warning "Building for target: US04"
 static iomux_v3_cfg_t const uart_pads[] = {
 	IMX8MM_PAD_SAI2_RXC_UART1_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 	IMX8MM_PAD_SAI2_RXFS_UART1_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
@@ -65,7 +68,28 @@ void ena_rs232phy(void)
 #else
 void ena_rs232phy(void){}
 #endif
+#else
+/* Specific code for the NS04 target */
+#warning "Building for target: NS04"
+static iomux_v3_cfg_t const uart_pads[] = {
+	IMX8MM_PAD_UART3_RXD_UART3_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
+	IMX8MM_PAD_UART3_TXD_UART3_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
+};
 
+static iomux_v3_cfg_t const wdog_pads[] = {
+	IMX8MM_PAD_GPIO1_IO02_WDOG1_WDOG_B  | MUX_PAD_CTRL(WDOG_PAD_CTRL),
+};
+
+#define US04_RST_OUT_GPIO IMX_GPIO_NR(4, 25)
+#define US04_SDCD_GPIO    IMX_GPIO_NR(2, 12)
+#define US04_RST_GPIO_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_DSE1)
+
+static iomux_v3_cfg_t const us04_rst_pads[] = {
+    IMX8MM_PAD_SAI2_TXC_GPIO4_IO25 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+};
+
+void ena_rs232phy(void){}
+#endif /* NS04*/
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
  */
@@ -179,9 +203,10 @@ int board_late_init(void)
 #if (defined(CONFIG_CMD_I2CHWCFG))  
     char* tmp;
     unsigned long hwcode = 0;
-
+#if defined(CONFIG_TARGET_IMX8MM_US04)
     gpio_request(US04_RXEN0_GPIO, "us04_rxen0_out");
     gpio_direction_output(US04_RXEN0_GPIO, 1);
+#endif	
 #endif
 	
 #if (defined(CONFIG_CMD_I2CHWCFG))  

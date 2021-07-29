@@ -260,6 +260,11 @@
 #define PHYS_SDRAM_SIZE                0x80000000 /* 2GB DDR */
 #define CONFIG_NR_DRAM_BANKS           1
 
+#ifdef CONFIG_TARGET_IMX8MM_NS04
+#undef PHYS_SDRAM_SIZE
+#define PHYS_SDRAM_SIZE                0x40000000 /* 1GB DDR for NS04 */
+#endif
+
 #define CONFIG_SYS_MEMTEST_START       PHYS_SDRAM
 #define CONFIG_SYS_MEMTEST_END         (CONFIG_SYS_MEMTEST_START + (PHYS_SDRAM_SIZE >> 1))
 
@@ -267,6 +272,12 @@
 
 #define CONFIG_MXC_UART
 #define CONFIG_MXC_UART_BASE           UART1_BASE_ADDR
+
+/* Use UART3 for NS04 */
+#ifdef CONFIG_TARGET_IMX8MM_NS04
+#undef CONFIG_MXC_UART_BASE
+#define CONFIG_MXC_UART_BASE           UART3_BASE_ADDR
+#endif
 
 /* Monitor Command Prompt */
 #undef CONFIG_SYS_PROMPT

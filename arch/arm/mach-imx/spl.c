@@ -121,7 +121,7 @@ u32 spl_boot_device(void)
                 return BOOT_DEVICE_MMC1;
 	case FLEXSPI_BOOT:
 		return BOOT_DEVICE_SPI;
-#elif defined(CONFIG_TARGET_IMX8MM_US04)
+#elif defined(CONFIG_TARGET_IMX8MM_US04) || defined(CONFIG_TARGET_IMX8MM_NS04)
 	case SD1_BOOT:
 	case MMC1_BOOT:
 		return BOOT_DEVICE_MMC2;

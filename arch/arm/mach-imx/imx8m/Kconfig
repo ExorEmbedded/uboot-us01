@@ -59,6 +59,11 @@ config TARGET_IMX8MM_US04
 	select IMX8MM
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
+
+config TARGET_IMX8MM_NS04
+	bool "imx8mm 1GB DDR3L NS04 board"
+	select IMX8MM
+	select SUPPORT_SPL
 	
 config TARGET_IMX8MM_DDR4_EVK
 	bool "imx8mm DDR4 EVK board"
