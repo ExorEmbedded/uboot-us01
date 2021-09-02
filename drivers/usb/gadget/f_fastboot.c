@@ -759,7 +759,7 @@ U_BOOT_CMD(
 
 static ulong bootloader_mmc_offset(void)
 {
-	if (is_imx8m() || (is_imx8() && is_soc_rev(CHIP_REV_A)))
+	if (is_imx8mq() || is_imx8mm() || (is_imx8() && is_soc_rev(CHIP_REV_A)))
 		return 0x8400;
 	else if (is_imx8qm()) {
 		if (MEK_8QM_EMMC == fastboot_devinfo.dev_id)
@@ -767,6 +767,12 @@ static ulong bootloader_mmc_offset(void)
 			return 0x0;
 		else
 		/* target device is SD card, bootloader offset is 0x8000 */
+			return 0x8000;
+	} else if (is_imx8mn()) {
+		/* target device is eMMC boot0 partition, bootloader offset is 0x0 */
+		if (env_get_ulong("emmc_dev", 10, 1) == fastboot_devinfo.dev_id)
+			return 0;
+		else
 			return 0x8000;
 	}
 	else if (is_imx8())
@@ -1611,6 +1617,9 @@ void board_fastboot_setup(void)
 	} else if (is_imx8mm()) {
 		if (!env_get("soc_type"))
 			env_set("soc_type", "imx8mm");
+	} else if (is_imx8mn()) {
+		if (!env_get("soc_type"))
+			env_set("soc_type", "imx8mn");
 	}
 }
 
