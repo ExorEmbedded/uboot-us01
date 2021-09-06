@@ -11,7 +11,11 @@
 #include <errno.h>
 #include <asm/io.h>
 #include <asm/mach-imx/iomux-v3.h>
+#if defined(CONFIG_TARGET_IMX8MN_NS05)
+#include <asm/arch/imx8mn_pins.h>
+#else
 #include <asm/arch/imx8mm_pins.h>
+#endif
 #include <asm/arch/sys_proto.h>
 #include <power/pmic.h>
 #include <power/bd71837.h>
@@ -20,7 +24,7 @@
 #include <asm/mach-imx/mxc_i2c.h>
 #include <fsl_esdhc.h>
 #include <mmc.h>
-#if defined(CONFIG_TARGET_IMX8MM_NS04)
+#if defined(CONFIG_TARGET_IMX8MM_NS04) || defined(CONFIG_TARGET_IMX8MN_NS05)
 #include "ddr/ddr.h"
 #else
 #include <asm/arch/imx8m_ddr.h>
@@ -29,7 +33,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 void spl_dram_init(void)
 {
-#if defined(CONFIG_TARGET_IMX8MM_NS04)
+#if defined(CONFIG_TARGET_IMX8MM_NS04) || defined(CONFIG_TARGET_IMX8MN_NS05)
 	ddr_init();
 #else
 	ddr_init(&dram_timing);
@@ -38,6 +42,51 @@ void spl_dram_init(void)
 
 #define I2C_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PE)
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+
+#if defined(CONFIG_TARGET_IMX8MN_NS05)
+/* Specific pinmux for NS05 / imx8mn */
+struct i2c_pads_info i2c_pad_info1 = {
+	.scl = {
+		.i2c_mode = IMX8MN_PAD_I2C1_SCL__I2C1_SCL | PC,
+		.gpio_mode = IMX8MN_PAD_I2C1_SCL__GPIO5_IO14 | PC,
+		.gp = IMX_GPIO_NR(5, 14),
+	},
+	.sda = {
+		.i2c_mode = IMX8MN_PAD_I2C1_SDA__I2C1_SDA | PC,
+		.gpio_mode = IMX8MN_PAD_I2C1_SDA__GPIO5_IO15 | PC,
+		.gp = IMX_GPIO_NR(5, 15),
+	},
+};
+
+#define USDHC_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE |PAD_CTL_PE | PAD_CTL_FSEL2)
+#define USDHC_GPIO_PAD_CTRL (PAD_CTL_HYS | PAD_CTL_DSE1)
+
+/* eMMC pinmux */
+static iomux_v3_cfg_t const usdhc1_pads[] = {
+	IMX8MN_PAD_SD1_CLK__USDHC1_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD1_CMD__USDHC1_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD1_DATA0__USDHC1_DATA0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD1_DATA1__USDHC1_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD1_DATA2__USDHC1_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD1_DATA3__USDHC1_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD1_DATA4__USDHC1_DATA4 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD1_DATA5__USDHC1_DATA5 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD1_DATA6__USDHC1_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD1_DATA7__USDHC1_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+};
+
+/* SD-card pinmux */
+static iomux_v3_cfg_t const usdhc2_pads[] = {
+	IMX8MN_PAD_SD2_CLK__USDHC2_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD2_CMD__USDHC2_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD2_DATA0__USDHC2_DATA0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD2_DATA1__USDHC2_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD2_DATA2__USDHC2_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD2_DATA3__USDHC2_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	IMX8MN_PAD_SD2_RESET_B__GPIO2_IO19 | MUX_PAD_CTRL(USDHC_GPIO_PAD_CTRL),
+};
+#else
+/* Default pinmux for US04/NS04/imx8mm */
 struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
 		.i2c_mode = IMX8MM_PAD_I2C1_SCL_I2C1_SCL | PC,
@@ -78,6 +127,7 @@ static iomux_v3_cfg_t const usdhc2_pads[] = {
 	IMX8MM_PAD_SD2_DATA3_USDHC2_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	IMX8MM_PAD_SD2_RESET_B_GPIO2_IO19 | MUX_PAD_CTRL(USDHC_GPIO_PAD_CTRL),
 };
+#endif /* CONFIG_TARGET_IMX8MN_NS05*/
 
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
 	{USDHC2_BASE_ADDR, 0, 4},
@@ -146,7 +196,7 @@ int power_init_board(void)
 	/* increase VDD_DRAM to 0.9v for 3Ghz DDR */
 	pmic_reg_write(p, BD71837_BUCK5_VOLT, 0x2);
 
-#if defined(CONFIG_TARGET_IMX8MM_NS04)
+#if defined(CONFIG_TARGET_IMX8MM_NS04) || defined(CONFIG_TARGET_IMX8MN_NS05)
 	/* increase BUCK8 voltage to 1.35v for DDR3L */
 	pmic_reg_write(p, BD71837_BUCK8_VOLT, 0x37);
 #endif	

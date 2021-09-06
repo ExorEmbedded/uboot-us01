@@ -45,6 +45,20 @@
 
 #define CONFIG_MALLOC_F_ADDR           0x912000 /* malloc f used before GD_FLG_FULL_MALLOC_INIT set */
 
+/* Differnt OCRAM layout for NS05/imx8mn due to different size */
+#ifdef CONFIG_TARGET_IMX8MN_NS05
+#undef CONFIG_SPL_STACK
+#undef CONFIG_SPL_BSS_START_ADDR
+#undef CONFIG_SYS_SPL_MALLOC_START
+#undef CONFIG_SYS_SPL_MALLOC_SIZE
+#undef CONFIG_MALLOC_F_ADDR
+#define CONFIG_SPL_STACK		0x95fff0
+#define CONFIG_SPL_BSS_START_ADDR      0x00950000
+#define CONFIG_SYS_SPL_MALLOC_START    0x00940000
+#define CONFIG_SYS_SPL_MALLOC_SIZE     0x10000	/* 64 KB */
+#define CONFIG_MALLOC_F_ADDR		0x00940000
+#endif
+
 #define CONFIG_SPL_ABORT_ON_RAW_IMAGE /* For RAW image gives a error info not panic */
 
 #undef CONFIG_DM_MMC
@@ -265,6 +279,11 @@
 #define PHYS_SDRAM_SIZE                0x40000000 /* 1GB DDR for NS04 */
 #endif
 
+#ifdef CONFIG_TARGET_IMX8MN_NS05
+#undef PHYS_SDRAM_SIZE
+#define PHYS_SDRAM_SIZE                0x40000000 /* 1GB DDR for NS05 */
+#endif
+
 #define CONFIG_SYS_MEMTEST_START       PHYS_SDRAM
 #define CONFIG_SYS_MEMTEST_END         (CONFIG_SYS_MEMTEST_START + (PHYS_SDRAM_SIZE >> 1))
 
@@ -275,6 +294,12 @@
 
 /* Use UART3 for NS04 */
 #ifdef CONFIG_TARGET_IMX8MM_NS04
+#undef CONFIG_MXC_UART_BASE
+#define CONFIG_MXC_UART_BASE           UART3_BASE_ADDR
+#endif
+
+/* Use UART3 for NS05 */
+#ifdef CONFIG_TARGET_IMX8MN_NS05
 #undef CONFIG_MXC_UART_BASE
 #define CONFIG_MXC_UART_BASE           UART3_BASE_ADDR
 #endif

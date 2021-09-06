@@ -13,7 +13,11 @@
 #include <asm-generic/gpio.h>
 #include <fsl_esdhc.h>
 #include <mmc.h>
+#if defined(CONFIG_TARGET_IMX8MN_NS05)
+#include <asm/arch/imx8mn_pins.h>
+#else
 #include <asm/arch/imx8mm_pins.h>
+#endif
 #include <asm/arch/sys_proto.h>
 #include <asm/mach-imx/gpio.h>
 #include <asm/mach-imx/mxc_i2c.h>
@@ -68,7 +72,7 @@ void ena_rs232phy(void)
 #else
 void ena_rs232phy(void){}
 #endif
-#else
+#elif defined(CONFIG_TARGET_IMX8MM_NS04)
 /* Specific code for the NS04 target */
 #warning "Building for target: NS04"
 static iomux_v3_cfg_t const uart_pads[] = {
@@ -89,7 +93,32 @@ static iomux_v3_cfg_t const us04_rst_pads[] = {
 };
 
 void ena_rs232phy(void){}
-#endif /* NS04*/
+#elif defined(CONFIG_TARGET_IMX8MN_NS05)
+/* Specific code for the NS05 imx8mn target */
+#warning "Building for target: NS05 imx8mn"
+static iomux_v3_cfg_t const uart_pads[] = {
+	IMX8MN_PAD_UART3_RXD__UART3_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
+	IMX8MN_PAD_UART3_TXD__UART3_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
+};
+
+static iomux_v3_cfg_t const wdog_pads[] = {
+	IMX8MN_PAD_GPIO1_IO02__WDOG1_WDOG_B  | MUX_PAD_CTRL(WDOG_PAD_CTRL),
+};
+
+#define US04_RST_OUT_GPIO IMX_GPIO_NR(4, 25)
+#define US04_SDCD_GPIO    IMX_GPIO_NR(2, 12)
+#define NS05_HUB_RST_GPIO IMX_GPIO_NR(1, 14)
+#define US04_RST_GPIO_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_DSE1)
+
+static iomux_v3_cfg_t const us04_rst_pads[] = {
+    IMX8MN_PAD_SAI2_TXC__GPIO4_IO25 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+    IMX8MN_PAD_GPIO1_IO14__GPIO1_IO14 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+};
+
+void ena_rs232phy(void){}
+#else
+#error "Unknown CONFIG_TARGET_xxx: exiting"
+#endif /* CONFIG_TARGET_xxx*/
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
  */
@@ -206,6 +235,10 @@ int board_late_init(void)
 #if defined(CONFIG_TARGET_IMX8MM_US04)
     gpio_request(US04_RXEN0_GPIO, "us04_rxen0_out");
     gpio_direction_output(US04_RXEN0_GPIO, 1);
+#endif	
+#if defined(CONFIG_TARGET_IMX8MN_NS05)
+    gpio_request(NS05_HUB_RST_GPIO, "ns05_hub_rst_gpio");
+    gpio_direction_output(NS05_HUB_RST_GPIO, 1);
 #endif	
 #endif
 	

@@ -13,4 +13,9 @@ ifdef CONFIG_TARGET_IMX8MM_NS04
 obj-y += ddr/helper.o
 obj-y += ddr/ddr3l/ddr_init.o ddr/ddr3l/ddrphy_train.o
 endif
+ifdef CONFIG_TARGET_IMX8MN_NS05
+obj-y += ddr/helper.o
+obj-y += ddr/ddr3l_imx8mn_ns05/ddr_init.o ddr/ddr3l_imx8mn_ns05/ddrphy_train.o
+endif
+
 endif
