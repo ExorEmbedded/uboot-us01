@@ -108,11 +108,13 @@ static iomux_v3_cfg_t const wdog_pads[] = {
 #define US04_RST_OUT_GPIO IMX_GPIO_NR(4, 25)
 #define US04_SDCD_GPIO    IMX_GPIO_NR(2, 12)
 #define NS05_HUB_RST_GPIO IMX_GPIO_NR(1, 14)
+#define NS05_USB_ID_GPIO  IMX_GPIO_NR(1, 10)
 #define US04_RST_GPIO_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_DSE1)
 
 static iomux_v3_cfg_t const us04_rst_pads[] = {
     IMX8MN_PAD_SAI2_TXC__GPIO4_IO25 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
     IMX8MN_PAD_GPIO1_IO14__GPIO1_IO14 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+    IMX8MN_PAD_GPIO1_IO10__GPIO1_IO10 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
 };
 
 void ena_rs232phy(void){}
@@ -239,6 +241,8 @@ int board_late_init(void)
 #if defined(CONFIG_TARGET_IMX8MN_NS05)
     gpio_request(NS05_HUB_RST_GPIO, "ns05_hub_rst_gpio");
     gpio_direction_output(NS05_HUB_RST_GPIO, 1);
+    gpio_request(NS05_USB_ID_GPIO, "ns05_usb_id_gpio");
+    gpio_direction_output(NS05_USB_ID_GPIO, 0);
 #endif	
 #endif
 	
