@@ -36,6 +36,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define US04JSMART_VAL    139
 #define US04ETOPXX_VAL    145
 #define US04WU10_VAL      147
+#define US04EX705M_VAL    152
+#define US04EXW705M_VAL   153
 
 #if defined(CONFIG_TARGET_IMX8MM_US04)
 /* Specific code for the US04 target */
@@ -275,7 +277,15 @@ int board_late_init(void)
 			
 		run_command("mw.l 0x303d0518 0xff", 0);
     }
-  
+
+    if((hwcode==US04EX705M_VAL) || (hwcode==US04EXW705M_VAL))
+    {
+        if(env_get("eth1addr"))
+			run_command("setenv optargs pcie_tse1addr=${eth1addr}", 0);
+			
+		run_command("mw.l 0x303d0518 0xff", 0);
+    }
+
     if(hwcode==US04JSMART_VAL)
     {
         env_set("board_name", "us04_jsmart");
@@ -288,6 +298,10 @@ int board_late_init(void)
     {
         env_set("board_name", "us04_wu10"); 
     }
+    else if((hwcode==US04EX705M_VAL) || (hwcode==US04EXW705M_VAL))
+	{
+		env_set("board_name", "us04_ex705m");
+	}
     else
     {
         ena_rs232phy();
