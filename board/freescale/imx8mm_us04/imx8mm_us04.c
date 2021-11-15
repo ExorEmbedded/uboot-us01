@@ -38,6 +38,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define US04WU10_VAL      147
 #define US04EX705M_VAL    152
 #define US04EXW705M_VAL   153
+#define NS04ECO2XX_VAL    154
 
 #if defined(CONFIG_TARGET_IMX8MM_US04)
 /* Specific code for the US04 target */
@@ -302,6 +303,10 @@ int board_late_init(void)
 	{
 		env_set("board_name", "us04_ex705m");
 	}
+    else if(hwcode==NS04ECO2XX_VAL)
+    {
+        env_set("board_name", "ns04_eco2xx"); 
+    }
     else
     {
         ena_rs232phy();

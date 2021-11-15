@@ -206,6 +206,8 @@
 			"setenv fdtfile us04_wu10.dtb; fi; " \
 		"if test $board_name = us04_ex705m; then " \
 			"setenv fdtfile us04_ex705m.dtb; fi; " \
+		"if test $board_name = ns04_eco2xx; then " \
+			"setenv fdtfile ns04_eco2xx.dtb; fi; " \
 		"if test $board_name = usom_undefined; then " \
 			"setenv fdtfile usom_undefined.dtb; fi; \0" 
 			
