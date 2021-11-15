@@ -121,7 +121,7 @@ static void tsc2004_reset(void)
 
 void ena_rs232phy(void);
 static void check_wdog1_or_sw_reset(void);
-static void etop7xx_qspi_flash_reset(void);
+static int etop7xx_qspi_flash_reset(void);
 
 /*
  * Read I2C SEEPROM infos and set env. variables accordingly
@@ -149,7 +149,8 @@ static void check_wdog1_or_sw_reset(void)
   {
     //WE are here due to a SW or WDT reset ... need a clean POR sequence through the PMIC_ON_REQ pin. 
     u32 val;
-    etop7xx_qspi_flash_reset();
+    if(etop7xx_qspi_flash_reset())
+      return;
     printf("SW or WDT reset detected, performing POR...\n");
     mdelay (10);
     val = __raw_readl(SNVSLPCRREG);
@@ -286,7 +287,7 @@ iomux_v3_cfg_t const spi_pads[] = {
 #define SEL_MUX   (IMX_GPIO_NR(5, 21))
 
 /* Resets the qspi flash on etop7xxq systems only */
-static void etop7xx_qspi_flash_reset(void)
+static int etop7xx_qspi_flash_reset(void)
 {
   unsigned char in = 0x9f;
   int i;
@@ -302,7 +303,7 @@ static void etop7xx_qspi_flash_reset(void)
     hwcode = (simple_strtoul (tmp, NULL, 10))&0xff;
   
   if(hwcode!=ETOP7XXQ_VAL)
-    return;
+    return 0;
 
   /* We are an etop7xxq board: do qspi flash reset */
   imx_iomux_v3_setup_multiple_pads(spi_pads, ARRAY_SIZE(spi_pads));
@@ -363,6 +364,7 @@ static void etop7xx_qspi_flash_reset(void)
   //Done: set SEL_MUX to low
   gpio_set_value(SEL_MUX, 0);
   mdelay(1);
+  return 1;
 }
 
 
