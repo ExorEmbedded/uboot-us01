@@ -267,15 +267,8 @@ int board_late_init(void)
   gpio_request(DL_GPIO ,"");
   gpio_direction_output(DL_GPIO,1);
   
-  //Loop forever
-  while(1)
-  {
-    mdelay(1000);
-#if defined(CONFIG_HW_WATCHDOG)
-    hw_watchdog_reset();
-#endif
-  }
-    
+  setenv("bootcmd", "\0");
+  ena_rs232phy();
   return 0;
 }
 #endif
