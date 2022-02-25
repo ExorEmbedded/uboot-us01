@@ -20,12 +20,49 @@
 #include <asm/mach-imx/boot_mode.h>
 #include <g_dnl.h>
 #include <linux/libfdt.h>
+#include <mmc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
 __weak int spl_board_boot_device(enum boot_device boot_dev_spl)
 {
-	return 0;
+	switch (boot_dev_spl) {
+#if defined(CONFIG_MX7)
+	case SD1_BOOT:
+	case MMC1_BOOT:
+	case SD2_BOOT:
+	case MMC2_BOOT:
+	case SD3_BOOT:
+	case MMC3_BOOT:
+		return BOOT_DEVICE_MMC1;
+#elif defined(CONFIG_IMX8)
+	case MMC1_BOOT:
+		return BOOT_DEVICE_MMC1;
+	case SD2_BOOT:
+		return BOOT_DEVICE_MMC2_2;
+	case SD3_BOOT:
+		return BOOT_DEVICE_MMC1;
+	case FLEXSPI_BOOT:
+		return BOOT_DEVICE_SPI;
+#elif defined(CONFIG_IMX8M)
+	case SD1_BOOT:
+	case MMC1_BOOT:
+		return BOOT_DEVICE_MMC1;
+	case SD2_BOOT:
+	case MMC2_BOOT:
+		return BOOT_DEVICE_MMC2;
+#endif
+	case NAND_BOOT:
+		return BOOT_DEVICE_NAND;
+	case SPI_NOR_BOOT:
+		return BOOT_DEVICE_SPI;
+	case QSPI_BOOT:
+		return BOOT_DEVICE_NOR;
+	case USB_BOOT:
+		return BOOT_DEVICE_BOARD;
+	default:
+		return BOOT_DEVICE_NONE;
+	}
 }
 
 #if defined(CONFIG_MX6)
@@ -140,54 +177,14 @@ u32 spl_boot_device(void)
 
 	enum boot_device boot_device_spl = get_boot_device();
 
-	if (IS_ENABLED(CONFIG_IMX8MM) || IS_ENABLED(CONFIG_IMX8MN) ||
-	    IS_ENABLED(CONFIG_IMX8MP))
-		return spl_board_boot_device(boot_device_spl);
-
-	switch (boot_device_spl) {
-#if defined(CONFIG_MX7)
-	case SD1_BOOT:
-	case MMC1_BOOT:
-	case SD2_BOOT:
-	case MMC2_BOOT:
-	case SD3_BOOT:
-	case MMC3_BOOT:
-		return BOOT_DEVICE_MMC1;
-#elif defined(CONFIG_IMX8)
-	case MMC1_BOOT:
-		return BOOT_DEVICE_MMC1;
-	case SD2_BOOT:
-		return BOOT_DEVICE_MMC2_2;
-	case SD3_BOOT:
-		return BOOT_DEVICE_MMC1;
-	case FLEXSPI_BOOT:
-		return BOOT_DEVICE_SPI;
-#elif defined(CONFIG_IMX8M)
-	case SD1_BOOT:
-	case MMC1_BOOT:
-		return BOOT_DEVICE_MMC1;
-	case SD2_BOOT:
-	case MMC2_BOOT:
-		return BOOT_DEVICE_MMC2;
-#endif
-	case NAND_BOOT:
-		return BOOT_DEVICE_NAND;
-	case SPI_NOR_BOOT:
-		return BOOT_DEVICE_SPI;
-	case QSPI_BOOT:
-		return BOOT_DEVICE_NOR;
-	case USB_BOOT:
-		return BOOT_DEVICE_USB;
-	default:
-		return BOOT_DEVICE_NONE;
-	}
+	return spl_board_boot_device(boot_device_spl);
 }
 #endif /* CONFIG_MX7 || CONFIG_IMX8M || CONFIG_IMX8 */
 
 #ifdef CONFIG_SPL_USB_GADGET
 int g_dnl_bind_fixup(struct usb_device_descriptor *dev, const char *name)
 {
-	put_unaligned(CONFIG_USB_GADGET_PRODUCT_NUM + 0xfff, &dev->idProduct);
+	put_unaligned(0x0151, &dev->idProduct);
 
 	return 0;
 }
@@ -322,18 +319,22 @@ ulong board_spl_fit_size_align(ulong size)
 	return size;
 }
 
-void board_spl_fit_post_load(const void *fit)
-{
-	u32 offset = ALIGN(fdt_totalsize(fit), 0x1000);
-
-	if (imx_hab_authenticate_image((uintptr_t)fit,
-				       offset + IVT_SIZE + CSF_PAD_SIZE,
-				       offset)) {
-		panic("spl: ERROR:  image authentication unsuccessful\n");
-	}
-}
 #endif
 
+void* board_spl_fit_buffer_addr(ulong fit_size, int sectors, int bl_len)
+{
+	int align_len = ARCH_DMA_MINALIGN - 1;
+
+	/* Some devices like SDP, NOR, NAND, SPI are using bl_len =1, so their fit address
+	 * is different with SD/MMC, this cause mismatch with signed address. Thus, adjust
+	 * the bl_len to align with SD/MMC.
+	 */
+	if (bl_len < 512)
+		bl_len = 512;
+
+	return  (void *)((CONFIG_SYS_TEXT_BASE - fit_size - bl_len -
+			align_len) & ~align_len);
+}
 #endif
 
 #if defined(CONFIG_MX6) && defined(CONFIG_SPL_OS_BOOT)
@@ -343,5 +344,94 @@ int dram_init_banksize(void)
 	gd->bd->bi_dram[0].size = imx_ddr_size();
 
 	return 0;
+}
+#endif
+
+#if defined(CONFIG_IMX8MP) || defined(CONFIG_IMX8MN)
+int board_handle_rdc_config(void *fdt_addr, const char *config_name, void *dst_addr)
+{
+	int node = -1, size = 0, ret = 0;
+	uint32_t *data = NULL;
+	const struct fdt_property *prop;
+
+	node = fdt_node_offset_by_compatible(fdt_addr, -1, "imx8m,mcu_rdc");
+	if (node < 0) {
+		printf("Failed to find node!, err: %d!\n", node);
+		ret = -1;
+		goto exit;
+	}
+
+	/*
+	 * Before MCU core starts we should set the rdc config for it,
+	 * then restore the rdc config after it stops.
+	 */
+	prop = fdt_getprop(fdt_addr, node, config_name, &size);
+	if (!prop) {
+		printf("Failed to find property %s!\n", config_name);
+		ret = -1;
+		goto exit;
+	}
+	if (!size || size % (5 * sizeof(uint32_t))) {
+		printf("Config size is wrong! size:%d\n", size);
+		ret = -1;
+		goto exit;
+	}
+	data = malloc(size);
+	if (fdtdec_get_int_array(fdt_addr, node, config_name,
+				 data, size/sizeof(int))) {
+		printf("Failed to parse rdc config!\n");
+		ret = -1;
+		goto exit;
+	} else {
+		/* copy the rdc config */
+		memcpy(dst_addr, data, size);
+		ret = 0;
+	}
+
+exit:
+	if (data)
+		free(data);
+
+	/* Invalidate the buffer if no valid config found. */
+	if (ret < 0)
+		memset(dst_addr, 0, sizeof(uint32_t));
+
+	return ret;
+}
+#endif
+
+void board_spl_fit_post_load(const void *fit, struct spl_image_info *spl_image)
+{
+#if defined(CONFIG_IMX_HAB) && !defined(CONFIG_SPL_FIT_SIGNATURE)
+	if (!(spl_image->flags & SPL_FIT_BYPASS_POST_LOAD)) {
+		u32 offset = ALIGN(fdt_totalsize(fit), 0x1000);
+
+		if (imx_hab_authenticate_image((uintptr_t)fit,
+					       offset + IVT_SIZE + CSF_PAD_SIZE,
+					       offset)) {
+			panic("spl: ERROR:  image authentication unsuccessful\n");
+		}
+	}
+#endif
+#if defined(CONFIG_IMX8MP) || defined(CONFIG_IMX8MN)
+#define MCU_RDC_MAGIC "mcu_rdc"
+	if (!(spl_image->flags & SPL_FIT_BYPASS_POST_LOAD)) {
+		memcpy((void *)CONFIG_IMX8M_MCU_RDC_START_CONFIG_ADDR, MCU_RDC_MAGIC, ALIGN(strlen(MCU_RDC_MAGIC), 4));
+		memcpy((void *)CONFIG_IMX8M_MCU_RDC_STOP_CONFIG_ADDR, MCU_RDC_MAGIC, ALIGN(strlen(MCU_RDC_MAGIC), 4));
+		board_handle_rdc_config(spl_image->fdt_addr, "start-config",
+					(void *)(CONFIG_IMX8M_MCU_RDC_START_CONFIG_ADDR + ALIGN(strlen(MCU_RDC_MAGIC), 4)));
+		board_handle_rdc_config(spl_image->fdt_addr, "stop-config",
+					(void *)(CONFIG_IMX8M_MCU_RDC_STOP_CONFIG_ADDR + ALIGN(strlen(MCU_RDC_MAGIC), 4)));
+	}
+#endif
+}
+
+#ifdef CONFIG_IMX_TRUSTY_OS
+int check_rpmb_blob(struct mmc *mmc);
+
+int mmc_image_load_late(struct mmc *mmc)
+{
+	/* Check the rpmb key blob for trusty enabled platfrom. */
+	return check_rpmb_blob(mmc);
 }
 #endif

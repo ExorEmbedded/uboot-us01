@@ -469,6 +469,13 @@ config FSL_ESPI
 	  access the SPI interface and SPI NOR flash on platforms embedding
 	  this Freescale eSPI IP core.
 
+config FSL_FSPI_NAND
+	bool "Freescale FlexSPI driver for SPI NAND"
+	help
+	  Enable the Freescale FlexSPI (FSPI) NAND driver. This driver can be
+	  used to access the SPI NAND flash on platforms embedding this
+	  Freescale IP core.
+
 config SH_QSPI
 	bool "Renesas Quad SPI driver"
 	help
@@ -480,5 +487,11 @@ config MXC_SPI
 	help
 	  Enable the MXC SPI controller driver. This driver can be used
 	  on various i.MX SoCs such as i.MX31/35/51/6/7.
+
+config FSL_LPSPI
+	bool "FSL LPSPI Driver"
+	help
+	  Enable the FSL LPSPI controller driver. This driver can be used
+	  on various i.MX SoCs such as i.MX7ULP/8QM/8QXP/8DX/8DXL.
 
 endif # menu "SPI Support"

@@ -77,6 +77,9 @@
 #ifdef CONFIG_EFI_SETUP_EARLY
 #include <efi_loader.h>
 #endif
+#ifdef CONFIG_FSL_FASTBOOT
+#include <fb_fsl.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -578,6 +581,46 @@ int initr_mem(void)
 }
 #endif
 
+#if defined(AVB_RPMB) && !defined(CONFIG_SPL)
+extern int init_avbkey(void);
+static int initr_avbkey(void)
+{
+	return init_avbkey();
+}
+#endif
+
+#ifdef CONFIG_FSL_FASTBOOT
+static int initr_fastboot_setup(void)
+{
+	fastboot_setup();
+	return 0;
+}
+
+static int initr_check_fastboot(void)
+{
+	fastboot_run_bootmode();
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_IMX_TRUSTY_OS
+extern void tee_setup(void);
+static int initr_tee_setup(void)
+{
+	tee_setup();
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_DUAL_BOOTLOADER
+extern void check_spl_recovery(void);
+static int initr_check_spl_recovery(void)
+{
+	check_spl_recovery();
+	return 0;
+}
+#endif
+
 static int run_main_loop(void)
 {
 #ifdef CONFIG_SANDBOX
@@ -759,6 +802,9 @@ static init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_BOARD_LATE_INIT
 	board_late_init,
 #endif
+#ifdef CONFIG_FSL_FASTBOOT
+	initr_fastboot_setup,
+#endif
 #if defined(CONFIG_SCSI) && !defined(CONFIG_DM_SCSI)
 	INIT_FUNC_WATCHDOG_RESET
 	initr_scsi,
@@ -797,6 +843,18 @@ static init_fnc_t init_sequence_r[] = {
 #endif
 #ifdef CONFIG_EFI_SETUP_EARLY
 	(init_fnc_t)efi_init_obj_list,
+#endif
+#if defined(AVB_RPMB) && !defined(CONFIG_SPL)
+	initr_avbkey,
+#endif
+#ifdef CONFIG_IMX_TRUSTY_OS
+	initr_tee_setup,
+#endif
+#ifdef CONFIG_FSL_FASTBOOT
+	initr_check_fastboot,
+#endif
+#ifdef CONFIG_DUAL_BOOTLOADER
+	initr_check_spl_recovery,
 #endif
 	run_main_loop,
 };

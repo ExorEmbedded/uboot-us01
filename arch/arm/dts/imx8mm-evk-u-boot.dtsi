@@ -9,6 +9,32 @@
 		wdt = <&wdog1>;
 		u-boot,dm-spl;
 	};
+
+	aliases {
+		usbgadget0 = &usbg1;
+		usbgadget1 = &usbg2;
+	};
+
+	usbg1: usbg1 {
+		compatible = "fsl,imx27-usb-gadget";
+		dr_mode = "peripheral";
+		chipidea,usb = <&usbotg1>;
+		status = "okay";
+	};
+
+	usbg2: usbg2 {
+		compatible = "fsl,imx27-usb-gadget";
+		dr_mode = "peripheral";
+		chipidea,usb = <&usbotg2>;
+		status = "okay";
+	};
+
+	firmware {
+		optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+		};
+	};
 };
 
 &{/soc@0} {
@@ -48,6 +74,7 @@
 
 &reg_usdhc2_vmmc {
 	u-boot,off-on-delay-us = <20000>;
+	u-boot,dm-spl;
 };
 
 &pinctrl_reg_usdhc2_vmmc {
@@ -96,29 +123,39 @@
 
 &usdhc1 {
 	u-boot,dm-spl;
+	assigned-clocks = <&clk IMX8MM_CLK_USDHC1>;
+	assigned-clock-rates = <400000000>;
+	assigned-clock-parents = <&clk IMX8MM_SYS_PLL1_400M>;
 };
 
 &usdhc2 {
 	u-boot,dm-spl;
 	sd-uhs-sdr104;
 	sd-uhs-ddr50;
+	assigned-clocks = <&clk IMX8MM_CLK_USDHC2>;
+	assigned-clock-rates = <400000000>;
+	assigned-clock-parents = <&clk IMX8MM_SYS_PLL1_400M>;
+	fsl,signal-voltage-switch-extra-delay-ms = <8>;
 };
 
 &usdhc3 {
 	u-boot,dm-spl;
 	mmc-hs400-1_8v;
 	mmc-hs400-enhanced-strobe;
+	assigned-clocks = <&clk IMX8MM_CLK_USDHC3>;
+	assigned-clock-rates = <400000000>;
+	assigned-clock-parents = <&clk IMX8MM_SYS_PLL1_400M>;
 };
 
 &i2c1 {
 	u-boot,dm-spl;
 };
 
-&{/soc@0/bus@30800000/i2c@30a20000/pmic@4b} {
+&{/soc@0/bus@30800000/i2c@30a20000/pca9450@25} {
 	u-boot,dm-spl;
 };
 
-&{/soc@0/bus@30800000/i2c@30a20000/pmic@4b/regulators} {
+&{/soc@0/bus@30800000/i2c@30a20000/pca9450@25/regulators} {
 	u-boot,dm-spl;
 };
 
@@ -134,6 +171,31 @@
 	phy-reset-gpios = <&gpio4 22 GPIO_ACTIVE_LOW>;
 };
 
+&ethphy0 {
+	vddio0: vddio-regulator {
+		regulator-name = "VDDIO";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+};
+
 &wdog1 {
 	u-boot,dm-spl;
+};
+
+&usbotg1 {
+	status = "okay";
+	extcon = <&ptn5110>;
+};
+
+&lcdif {
+	/delete-property/ assigned-clocks;
+	/delete-property/ assigned-clock-parents;
+	/delete-property/ assigned-clock-rates;
+};
+
+&mipi_dsi {
+	/delete-property/ assigned-clocks;
+	/delete-property/ assigned-clock-parents;
+	/delete-property/ assigned-clock-rates;
 };

@@ -14,7 +14,6 @@
 #include <errno.h>
 #include <netdev.h>
 #include <fsl_ddr.h>
-#include <fsl_sec.h>
 #include <asm/io.h>
 #include <fdt_support.h>
 #include <linux/bitops.h>
@@ -682,10 +681,6 @@ int board_init(void)
 #if defined(CONFIG_QSFP_EEPROM) && defined(CONFIG_PHY_CORTINA)
 	qsfp_cortina_detect();
 #endif
-#endif
-
-#ifdef CONFIG_FSL_CAAM
-	sec_init();
 #endif
 
 #if !defined(CONFIG_SYS_EARLY_PCI_INIT) && defined(CONFIG_DM_ETH)

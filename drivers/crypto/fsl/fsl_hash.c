@@ -87,7 +87,7 @@ static int caam_hash_update(void *hash_ctx, const void *buf,
 			    enum caam_hash_algos caam_algo)
 {
 	uint32_t final;
-	phys_addr_t addr = virt_to_phys((void *)buf);
+	caam_dma_addr_t addr = virt_to_phys((void *)buf);
 	struct sha_ctx *ctx = hash_ctx;
 
 	if (ctx->sg_num >= MAX_SG_32) {
@@ -95,12 +95,12 @@ static int caam_hash_update(void *hash_ctx, const void *buf,
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_PHYS_64BIT
+#ifdef CONFIG_CAAM_64BIT
 	sec_out32(&ctx->sg_tbl[ctx->sg_num].addr_hi, (uint32_t)(addr >> 32));
 #else
 	sec_out32(&ctx->sg_tbl[ctx->sg_num].addr_hi, 0x0);
 #endif
-	sec_out32(&ctx->sg_tbl[ctx->sg_num].addr_lo, (uint32_t)addr);
+	sec_out32(&ctx->sg_tbl[ctx->sg_num].addr_lo, (caam_dma_addr_t)addr);
 
 	sec_out32(&ctx->sg_tbl[ctx->sg_num].len_flag,
 		  (size & SG_ENTRY_LENGTH_MASK));
@@ -168,16 +168,17 @@ int caam_hash(const unsigned char *pbuf, unsigned int buf_len,
 	uint32_t *desc;
 	unsigned int size;
 
-	desc = malloc_cache_aligned(sizeof(int) * MAX_CAAM_DESCSIZE);
-	if (!desc) {
-		debug("Not enough memory for descriptor allocation\n");
-		return -ENOMEM;
-	}
-
 	if (!IS_ALIGNED((uintptr_t)pbuf, ARCH_DMA_MINALIGN) ||
 	    !IS_ALIGNED((uintptr_t)pout, ARCH_DMA_MINALIGN)) {
 		puts("Error: Address arguments are not aligned\n");
 		return -EINVAL;
+	}
+
+	debug("\ncaam hash\n");
+	desc = malloc_cache_aligned(sizeof(int) * MAX_CAAM_DESCSIZE);
+	if (!desc) {
+		debug("Not enough memory for descriptor allocation\n");
+		return -ENOMEM;
 	}
 
 	size = ALIGN(buf_len, ARCH_DMA_MINALIGN);
@@ -190,6 +191,8 @@ int caam_hash(const unsigned char *pbuf, unsigned int buf_len,
 
 	size = ALIGN(sizeof(int) * MAX_CAAM_DESCSIZE, ARCH_DMA_MINALIGN);
 	flush_dcache_range((unsigned long)desc, (unsigned long)desc + size);
+	size = ALIGN(driver_hash[algo].digestsize, ARCH_DMA_MINALIGN);
+	invalidate_dcache_range((unsigned long)pout, (unsigned long)pout + size);
 
 	ret = run_descriptor_jr(desc);
 

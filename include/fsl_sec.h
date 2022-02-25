@@ -3,6 +3,7 @@
  * Common internal memory map for some Freescale SoCs
  *
  * Copyright 2014 Freescale Semiconductor, Inc.
+ * Copyright 2018, 2021 NXP
  */
 
 #ifndef __FSL_SEC_H
@@ -12,8 +13,8 @@
 #include <asm/io.h>
 
 #ifdef CONFIG_SYS_FSL_SEC_LE
-#define sec_in32(a)       in_le32(a)
-#define sec_out32(a, v)   out_le32(a, v)
+#define sec_in32(a)       in_le32((ulong *)(ulong)(a))
+#define sec_out32(a, v)   out_le32((ulong *)(ulong)(a), v)
 #define sec_in16(a)       in_le16(a)
 #define sec_clrbits32     clrbits_le32
 #define sec_setbits32     setbits_le32
@@ -27,10 +28,22 @@
 #error Neither CONFIG_SYS_FSL_SEC_LE nor CONFIG_SYS_FSL_SEC_BE is defined
 #endif
 
+#define BLOB_OVERHEAD		(32 + 16)
+#define BLOB_SIZE(x)		((x) + 32 + 16) /* Blob buffer size */
+#define AES256_KEY_SZ		32
+
+#define NONCE_SIZE		6
+#define ICV_SIZE		6
+#define CCM_OVERHEAD		(NONCE_SIZE + ICV_SIZE)
+#define TAG_SIZE		20
+#define MAX_BLOB_SIZE		(AES256_KEY_SZ + CCM_OVERHEAD +\
+				BLOB_OVERHEAD + TAG_SIZE)
+
 /* Security Engine Block (MS = Most Sig., LS = Least Sig.) */
 #if CONFIG_SYS_FSL_SEC_COMPAT >= 4
 /* RNG4 TRNG test registers */
 struct rng4tst {
+#define RTMCTL_ACC  0x20
 #define RTMCTL_PRGM 0x00010000	/* 1 -> program mode, 0 -> run mode */
 #define RTMCTL_SAMP_MODE_VON_NEUMANN_ES_SC     0 /* use von Neumann data in
 						    both entropy shifter and
@@ -191,11 +204,11 @@ typedef struct ccsr_sec {
 #define SEC_CHAVID_LS_RNG_SHIFT		16
 #define SEC_CHAVID_RNG_LS_MASK		0x000f0000
 
-#define CONFIG_JRSTARTR_JR0		0x00000001
-
 struct jr_regs {
 #if defined(CONFIG_SYS_FSL_SEC_LE) && \
-	!(defined(CONFIG_MX6) || defined(CONFIG_MX7))
+	!(defined(CONFIG_MX6) || defined(CONFIG_MX7) || \
+	  defined(CONFIG_MX7ULP) || defined(CONFIG_IMX8M) || defined(CONFIG_IMX8) || \
+	  defined(CONFIG_IMX8ULP))
 	u32 irba_l;
 	u32 irba_h;
 #else
@@ -209,7 +222,9 @@ struct jr_regs {
 	u32 rsvd3;
 	u32 irja;
 #if defined(CONFIG_SYS_FSL_SEC_LE) && \
-	!(defined(CONFIG_MX6) || defined(CONFIG_MX7))
+	!(defined(CONFIG_MX6) || defined(CONFIG_MX7) || \
+	  defined(CONFIG_MX7ULP) || defined(CONFIG_IMX8M) || defined(CONFIG_IMX8) || \
+	  defined(CONFIG_IMX8ULP))
 	u32 orba_l;
 	u32 orba_h;
 #else
@@ -242,7 +257,9 @@ struct jr_regs {
  */
 struct sg_entry {
 #if defined(CONFIG_SYS_FSL_SEC_LE) && \
-	!(defined(CONFIG_MX6) || defined(CONFIG_MX7))
+	!(defined(CONFIG_MX6) || defined(CONFIG_MX7) || \
+	  defined(CONFIG_MX7ULP) || defined(CONFIG_IMX8M) || defined(CONFIG_IMX8) || \
+	  defined(CONFIG_IMX8ULP))
 	uint32_t addr_lo;	/* Memory Address - lo */
 	uint32_t addr_hi;	/* Memory Address of start of buffer - hi */
 #else
@@ -261,9 +278,9 @@ struct sg_entry {
 #define SG_ENTRY_OFFSET_SHIFT	0
 };
 
-#define BLOB_SIZE(x)		((x) + 32 + 16) /* Blob buffer size */
-
-#if defined(CONFIG_MX6) || defined(CONFIG_MX7)
+#if defined(CONFIG_MX6) || defined(CONFIG_MX7) || \
+	 defined(CONFIG_MX7ULP) || defined(CONFIG_IMX8M) || defined(CONFIG_IMX8) || \
+	 defined(CONFIG_IMX8ULP)
 /* Job Ring Base Address */
 #define JR_BASE_ADDR(x) (CONFIG_SYS_FSL_SEC_ADDR + 0x1000 * (x + 1))
 /* Secure Memory Offset varies accross versions */
@@ -271,7 +288,8 @@ struct sg_entry {
 #define SM_V2_OFFSET 0xa00
 /*Secure Memory Versioning */
 #define SMVID_V2 0x20105
-#define SM_VERSION(x)  (x < SMVID_V2 ? 1 : 2)
+#define SM_VERSION(x)  ({typeof(x) _x = x; \
+		_x < SMVID_V2 ? 1 : (_x < 0x20300 ? 2 : 3); })
 #define SM_OFFSET(x)  (x == 1 ? SM_V1_OFFSET : SM_V2_OFFSET)
 /* CAAM Job Ring 0 Registers */
 /* Secure Memory Partition Owner register */
@@ -298,8 +316,10 @@ struct sg_entry {
 #define SM_CMD(v)		(v == 1 ? 0x0 : 0x1E4)
 #define SM_STATUS(v)		(v == 1 ? 0x8 : 0x1EC)
 #define SM_PERM(v)		(v == 1 ?  0x10 : 0x4)
-#define SM_GROUP2(v)		(v == 1 ? 0x14 : 0x8)
-#define SM_GROUP1(v)		(v == 1 ? 0x18 : 0xC)
+#define SM_GROUP2(v)		({typeof(v) _v = v; \
+		_v == 1 ? 0x14 : (_v == 2 ? 0x8 : 0xC); })
+#define SM_GROUP1(v)		({typeof(v) _v = v; \
+		_v == 1 ? 0x18 : (_v == 2 ? 0xC : 0x8); })
 #define CMD_PAGE_ALLOC		0x1
 #define CMD_PAGE_DEALLOC	0x2
 #define CMD_PART_DEALLOC	0x3
@@ -317,10 +337,15 @@ struct sg_entry {
 #define SEC_MEM_PAGE2		(CAAM_ARB_BASE_ADDR + 0x2000)
 #define SEC_MEM_PAGE3		(CAAM_ARB_BASE_ADDR + 0x3000)
 
-#define JR_MID			2               /* Matches ROM configuration */
-#define KS_G1			(1 << JR_MID)   /* CAAM only */
-#define PERM			0x0000B008      /* Clear on release, lock SMAP
-						 * lock SMAG group 1 Blob */
+#ifdef CONFIG_IMX8M
+#define JR_MID    (1)         /* Matches ATF configuration */
+#define KS_G1     (0x10000 << JR_MID) /* CAAM only */
+#define PERM      (0xB080)    /* CSP, SMAP_LCK, SMAG_LCK, G1_BLOB */
+#else
+#define JR_MID    (2)         /* Matches ROM configuration */
+#define KS_G1     BIT(JR_MID) /* CAAM only */
+#define PERM      (0xB008)    /* CSP, SMAP_LCK, SMAG_LCK, G1_BLOB */
+#endif /* CONFIG_IMX8M */
 
 /* HAB WRAPPED KEY header */
 #define WRP_HDR_SIZE		0x08
@@ -340,6 +365,13 @@ struct sg_entry {
 
 #endif
 
+#define FSL_CAAM_MP_PUBK_BYTES		    64
+#define FSL_CAAM_MP_PRVK_BYTES		    32
+#define FSL_CAAM_MP_MES_DGST_BYTES	    32
+
+#define FSL_CAAM_ORSR_JRa_OFFSET	0x102c
+#define FSL_CAAM_MAX_JR_SIZE		4
+
 /* blob_dek:
  * Encapsulates the src in a secure blob and stores it dst
  * @src: reference to the plaintext
@@ -349,12 +381,56 @@ struct sg_entry {
  */
 int blob_dek(const u8 *src, u8 *dst, u8 len);
 
+int gen_mppubk(u8 *dst);
+
+int sign_mppubk(const u8 *m, int data_size, u8 *dgst, u8 *c, u8 *d);
+
 #if defined(CONFIG_ARCH_C29X)
 int sec_init_idx(uint8_t);
 #endif
 int sec_init(void);
 
 u8 caam_get_era(void);
+
+/**
+ * blob_decap() - Decapsulate the data from a blob
+ * @key_mod:    - Key modifier address
+ * @src:        - Source address (blob)
+ * @dst:        - Destination address (data)
+ * @len:        - Size of decapsulated data
+ * @keycolor    - Determines if the source data is covered (black key) or
+ *                plaintext.
+ *
+ * Note: Start and end of the key_mod, src and dst buffers have to be aligned to
+ * the cache line size (ARCH_DMA_MINALIGN) for the CAAM operation to succeed.
+ *
+ * Returns zero on success, negative on error.
+ */
+int blob_decap(u8 *key_mod, u8 *src, u8 *dst, u32 len, u8 keycolor);
+
+/**
+ * blob_encap() - Encapsulate the data as a blob
+ * @key_mod:    - Key modifier address
+ * @src:        - Source address (data)
+ * @dst:        - Destination address (blob)
+ * @len:        - Size of data to be encapsulated
+ * @keycolor    - Determines if the source data is covered (black key) or
+ *                plaintext.
+ *
+ * Note: Start and end of the key_mod, src and dst buffers have to be aligned to
+ * the cache line size (ARCH_DMA_MINALIGN) for the CAAM operation to succeed.
+ *
+ * Returns zero on success, negative on error.
+ */
+int blob_encap(u8 *key_mod, u8 *src, u8 *dst, u32 len, u8 keycolor);
+
+int derive_blob_kek(u8 *bkek_buf, u8 *key_mod, u32 key_sz);
+
+int hwrng_generate(u8 *dst, u32 len);
+
+int aesecb_decrypt(u8 *key, u32 key_len, u8 *src, u8 *dst, u32 len);
+
+int tag_black_obj(u8 *black_obj, size_t black_obj_len, size_t key_len, size_t black_max_len);
 #endif
 
 #endif /* __FSL_SEC_H */

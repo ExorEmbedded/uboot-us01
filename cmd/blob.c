@@ -9,6 +9,11 @@
 #include <malloc.h>
 #include <asm/byteorder.h>
 #include <linux/compiler.h>
+#if defined(CONFIG_ARCH_MX6) || defined(CONFIG_ARCH_MX7) || \
+	defined(CONFIG_ARCH_MX7ULP) || defined(CONFIG_ARCH_IMX8M)
+#include <fsl_sec.h>
+#include <asm/arch/clock.h>
+#endif
 
 /**
  * blob_decap() - Decapsulate the data as a blob
@@ -16,10 +21,12 @@
  * @src:	- Address of data to be decapsulated
  * @dst:	- Address of data to be decapsulated
  * @len:	- Size of data to be decapsulated
+ * @keycolor    - Determines if the source data is covered (black key) or
+ *                plaintext.
  *
  * Returns zero on success,and negative on error.
  */
-__weak int blob_decap(u8 *key_mod, u8 *src, u8 *dst, u32 len)
+__weak int blob_decap(u8 *key_mod, u8 *src, u8 *dst, u32 len, u8 keycolor)
 {
 	return 0;
 }
@@ -30,10 +37,12 @@ __weak int blob_decap(u8 *key_mod, u8 *src, u8 *dst, u32 len)
  * @src:	- Address of data to be encapsulated
  * @dst:	- Address of data to be encapsulated
  * @len:	- Size of data to be encapsulated
+ * @keycolor    - Determines if the source data is covered (black key) or
+ *                plaintext.
  *
  * Returns zero on success,and negative on error.
  */
-__weak int blob_encap(u8 *key_mod, u8 *src, u8 *dst, u32 len)
+__weak int blob_encap(u8 *key_mod, u8 *src, u8 *dst, u32 len, u8 keycolor)
 {
 	return 0;
 }
@@ -74,10 +83,21 @@ static int do_blob(struct cmd_tbl *cmdtp, int flag, int argc,
 	src_ptr = (uint8_t *)(uintptr_t)src_addr;
 	dst_ptr = (uint8_t *)(uintptr_t)dst_addr;
 
+#if defined(CONFIG_ARCH_MX6) || defined(CONFIG_ARCH_MX7) || \
+	defined(CONFIG_ARCH_MX7ULP) || defined(CONFIG_ARCH_IMX8M)
+
+	hab_caam_clock_enable(1);
+
+	u32 out_jr_size = sec_in32(CONFIG_SYS_FSL_JR0_ADDR +
+				   FSL_CAAM_ORSR_JRa_OFFSET);
+	if (out_jr_size != FSL_CAAM_MAX_JR_SIZE)
+		sec_init();
+#endif
+
 	if (enc)
-		ret = blob_encap(km_ptr, src_ptr, dst_ptr, len);
+		ret = blob_encap(km_ptr, src_ptr, dst_ptr, len, 0);
 	else
-		ret = blob_decap(km_ptr, src_ptr, dst_ptr, len);
+		ret = blob_decap(km_ptr, src_ptr, dst_ptr, len, 0);
 
 	return ret;
 }

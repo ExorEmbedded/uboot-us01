@@ -16,10 +16,14 @@
 #include <asm/arch/sys_proto.h>
 #include <asm/mach-imx/hab.h>
 #include <asm/mach-imx/boot_mode.h>
+#include <asm/mach-imx/optee.h>
 #include <asm/mach-imx/syscounter.h>
 #include <asm/ptrace.h>
 #include <asm/armv8/mmu.h>
 #include <dm/uclass.h>
+#include <dm/platdata.h>
+#include <dm/uclass-internal.h>
+#include <dm/device-internal.h>
 #include <efi_loader.h>
 #include <env.h>
 #include <env_internal.h>
@@ -29,10 +33,12 @@
 #include <imx_sip.h>
 #include <linux/arm-smccc.h>
 #include <linux/bitops.h>
+#include <asm/setup.h>
+#include <asm/bootm.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if defined(CONFIG_IMX_HAB)
+#if defined(CONFIG_IMX_HAB) || defined(CONFIG_AVB_ATX) || defined(CONFIG_IMX_TRUSTY_OS)
 struct imx_sec_config_fuse_t const imx_sec_config_fuse = {
 	.bank = 1,
 	.word = 3,
@@ -133,7 +139,11 @@ static struct mm_region imx8m_mem_map[] = {
 		.phys = 0x40000000UL,
 		.size = PHYS_SDRAM_SIZE,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+#ifdef CONFIG_IMX_TRUSTY_OS
+			 PTE_BLOCK_INNER_SHARE
+#else
 			 PTE_BLOCK_OUTER_SHARE
+#endif
 #ifdef PHYS_SDRAM_2_SIZE
 	}, {
 		/* DRAM2 */
@@ -141,7 +151,11 @@ static struct mm_region imx8m_mem_map[] = {
 		.phys = 0x100000000UL,
 		.size = PHYS_SDRAM_2_SIZE,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+#ifdef CONFIG_IMX_TRUSTY_OS
+			 PTE_BLOCK_INNER_SHARE
+#else
 			 PTE_BLOCK_OUTER_SHARE
+#endif
 #endif
 	}, {
 		/* empty entrie to split table entry 5 if needed when TEEs are used */
@@ -167,32 +181,29 @@ static unsigned int imx8m_find_dram_entry_in_mem_map(void)
 
 void enable_caches(void)
 {
-	/* If OPTEE runs, remove OPTEE memory from MMU table to avoid speculative prefetch */
-	if (rom_pointer[1]) {
-		/*
-		 * TEE are loaded, So the ddr bank structures
-		 * have been modified update mmu table accordingly
-		 */
-		int i = 0;
-		/*
-		 * please make sure that entry initial value matches
-		 * imx8m_mem_map for DRAM1
-		 */
-		int entry = imx8m_find_dram_entry_in_mem_map();
-		u64 attrs = imx8m_mem_map[entry].attrs;
+	/* If OPTEE runs, remove OPTEE memory from MMU table to avoid speculative prefetch
+	 * If OPTEE does not run, still update the MMU table according to dram banks structure
+	 * to set correct dram size from board_phys_sdram_size
+	 */
+	int i = 0;
+	/*
+	 * please make sure that entry initial value matches
+	 * imx8m_mem_map for DRAM1
+	 */
+	int entry = imx8m_find_dram_entry_in_mem_map();
+	u64 attrs = imx8m_mem_map[entry].attrs;
 
-		while (i < CONFIG_NR_DRAM_BANKS &&
-		       entry < ARRAY_SIZE(imx8m_mem_map)) {
-			if (gd->bd->bi_dram[i].start == 0)
-				break;
-			imx8m_mem_map[entry].phys = gd->bd->bi_dram[i].start;
-			imx8m_mem_map[entry].virt = gd->bd->bi_dram[i].start;
-			imx8m_mem_map[entry].size = gd->bd->bi_dram[i].size;
-			imx8m_mem_map[entry].attrs = attrs;
-			debug("Added memory mapping (%d): %llx %llx\n", entry,
-			      imx8m_mem_map[entry].phys, imx8m_mem_map[entry].size);
-			i++; entry++;
-		}
+	while (i < CONFIG_NR_DRAM_BANKS &&
+	       entry < ARRAY_SIZE(imx8m_mem_map)) {
+		if (gd->bd->bi_dram[i].start == 0)
+			break;
+		imx8m_mem_map[entry].phys = gd->bd->bi_dram[i].start;
+		imx8m_mem_map[entry].virt = gd->bd->bi_dram[i].start;
+		imx8m_mem_map[entry].size = gd->bd->bi_dram[i].size;
+		imx8m_mem_map[entry].attrs = attrs;
+		debug("Added memory mapping (%d): %llx %llx\n", entry,
+		      imx8m_mem_map[entry].phys, imx8m_mem_map[entry].size);
+		i++; entry++;
 	}
 
 	icache_enable();
@@ -205,12 +216,15 @@ __weak int board_phys_sdram_size(phys_size_t *size)
 		return -EINVAL;
 
 	*size = PHYS_SDRAM_SIZE;
+
+#ifdef PHYS_SDRAM_2_SIZE
+	*size += PHYS_SDRAM_2_SIZE;
+#endif
 	return 0;
 }
 
 int dram_init(void)
 {
-	unsigned int entry = imx8m_find_dram_entry_in_mem_map();
 	phys_size_t sdram_size;
 	int ret;
 
@@ -224,13 +238,6 @@ int dram_init(void)
 	else
 		gd->ram_size = sdram_size;
 
-	/* also update the SDRAM size in the mem_map used externally */
-	imx8m_mem_map[entry].size = sdram_size;
-
-#ifdef PHYS_SDRAM_2_SIZE
-	gd->ram_size += PHYS_SDRAM_2_SIZE;
-#endif
-
 	return 0;
 }
 
@@ -239,10 +246,20 @@ int dram_init_banksize(void)
 	int bank = 0;
 	int ret;
 	phys_size_t sdram_size;
+	phys_size_t sdram_b1_size, sdram_b2_size;
 
 	ret = board_phys_sdram_size(&sdram_size);
 	if (ret)
 		return ret;
+
+	/* Bank 1 can't cross over 4GB space */
+	if (sdram_size > 0xc0000000) {
+		sdram_b1_size = 0xc0000000;
+		sdram_b2_size = sdram_size - 0xc0000000;
+	} else {
+		sdram_b1_size = sdram_size;
+		sdram_b2_size = 0;
+	}
 
 	gd->bd->bi_dram[bank].start = PHYS_SDRAM;
 	if (rom_pointer[1]) {
@@ -250,7 +267,7 @@ int dram_init_banksize(void)
 		phys_size_t optee_size = (size_t)rom_pointer[1];
 
 		gd->bd->bi_dram[bank].size = optee_start - gd->bd->bi_dram[bank].start;
-		if ((optee_start + optee_size) < (PHYS_SDRAM + sdram_size)) {
+		if ((optee_start + optee_size) < (PHYS_SDRAM + sdram_b1_size)) {
 			if (++bank >= CONFIG_NR_DRAM_BANKS) {
 				puts("CONFIG_NR_DRAM_BANKS is not enough\n");
 				return -1;
@@ -258,35 +275,51 @@ int dram_init_banksize(void)
 
 			gd->bd->bi_dram[bank].start = optee_start + optee_size;
 			gd->bd->bi_dram[bank].size = PHYS_SDRAM +
-				sdram_size - gd->bd->bi_dram[bank].start;
+				sdram_b1_size - gd->bd->bi_dram[bank].start;
 		}
 	} else {
-		gd->bd->bi_dram[bank].size = sdram_size;
+		gd->bd->bi_dram[bank].size = sdram_b1_size;
 	}
 
-#ifdef PHYS_SDRAM_2_SIZE
-	if (++bank >= CONFIG_NR_DRAM_BANKS) {
-		puts("CONFIG_NR_DRAM_BANKS is not enough for SDRAM_2\n");
-		return -1;
+	if (sdram_b2_size) {
+		if (++bank >= CONFIG_NR_DRAM_BANKS) {
+			puts("CONFIG_NR_DRAM_BANKS is not enough for SDRAM_2\n");
+			return -1;
+		}
+		gd->bd->bi_dram[bank].start = 0x100000000UL;
+		gd->bd->bi_dram[bank].size = sdram_b2_size;
 	}
-	gd->bd->bi_dram[bank].start = PHYS_SDRAM_2;
-	gd->bd->bi_dram[bank].size = PHYS_SDRAM_2_SIZE;
-#endif
 
 	return 0;
 }
 
 phys_size_t get_effective_memsize(void)
 {
-	/* return the first bank as effective memory */
-	if (rom_pointer[1])
-		return ((phys_addr_t)rom_pointer[0] - PHYS_SDRAM);
+	int ret;
+	phys_size_t sdram_size;
+	phys_size_t sdram_b1_size;
+	ret = board_phys_sdram_size(&sdram_size);
+	if (!ret) {
+		/* Bank 1 can't cross over 4GB space */
+		if (sdram_size > 0xc0000000) {
+			sdram_b1_size = 0xc0000000;
+		} else {
+			sdram_b1_size = sdram_size;
+		}
 
-#ifdef PHYS_SDRAM_2_SIZE
-	return gd->ram_size - PHYS_SDRAM_2_SIZE;
-#else
-	return gd->ram_size;
-#endif
+		if (rom_pointer[1]) {
+			/* We will relocate u-boot to Top of dram1. Tee position has two cases:
+			 * 1. At the top of dram1,  Then return the size removed optee size.
+			 * 2. In the middle of dram1, return the size of dram1.
+			 */
+			if ((rom_pointer[0] + rom_pointer[1]) == (PHYS_SDRAM + sdram_b1_size))
+				return ((phys_addr_t)rom_pointer[0] - PHYS_SDRAM);
+		}
+
+		return sdram_b1_size;
+	} else {
+		return PHYS_SDRAM_SIZE;
+	}
 }
 
 static u32 get_cpu_variant_type(u32 type)
@@ -324,18 +357,30 @@ static u32 get_cpu_variant_type(u32 type)
 	} else if (type == MXC_CPU_IMX8MN) {
 		switch (value & 0x3) {
 		case 2:
-			if (value & 0x1000000)
-				return MXC_CPU_IMX8MNDL;
-			else
+			if (value & 0x1000000) {
+				if (value & 0x10000000)	 /* MIPI DSI */
+					return MXC_CPU_IMX8MNUD;
+				else
+					return MXC_CPU_IMX8MNDL;
+			} else {
 				return MXC_CPU_IMX8MND;
+			}
 		case 3:
-			if (value & 0x1000000)
-				return MXC_CPU_IMX8MNSL;
-			else
+			if (value & 0x1000000) {
+				if (value & 0x10000000)	 /* MIPI DSI */
+					return MXC_CPU_IMX8MNUS;
+				else
+					return MXC_CPU_IMX8MNSL;
+			} else {
 				return MXC_CPU_IMX8MNS;
+			}
 		default:
-			if (value & 0x1000000)
-				return MXC_CPU_IMX8MNL;
+			if (value & 0x1000000) {
+				if (value & 0x10000000)	 /* MIPI DSI */
+					return MXC_CPU_IMX8MNUQ;
+				else
+					return MXC_CPU_IMX8MNL;
+			}
 			break;
 		}
 	} else if (type == MXC_CPU_IMX8MP) {
@@ -357,7 +402,21 @@ static u32 get_cpu_variant_type(u32 type)
 		if ((value & 0x3) == 0x3)
 			flag |= (1 << 2);
 
+		/* gpu disabled */
+		if ((value & 0xc0) == 0xc0)
+			flag |= (1 << 3);
+
+		/* lvds disabled */
+		if ((value & 0x180000) == 0x180000)
+			flag |= (1 << 4);
+
+		/* mipi dsi disabled */
+		if ((value & 0x60000) == 0x60000)
+			flag |= (1 << 5);
+
 		switch (flag) {
+		case 0x3f:
+			return MXC_CPU_IMX8MPUL;
 		case 7:
 			return MXC_CPU_IMX8MPL;
 		case 2:
@@ -398,7 +457,16 @@ u32 get_cpu_rev(void)
 			 * 0xff0055aa is magic number for B1.
 			 */
 			if (readl((void __iomem *)(OCOTP_BASE_ADDR + 0x40)) == 0xff0055aa) {
-				reg = CHIP_REV_2_1;
+				/*
+				 * B2 uses same DIGPROG and OCOTP_READ_FUSE_DATA value with B1,
+				 * so have to check ROM to distinguish them
+				 */
+				rom_version = readl((void __iomem *)ROM_VERSION_B0);
+				rom_version &= 0xff;
+				if (rom_version == CHIP_REV_2_2)
+					reg = CHIP_REV_2_2;
+				else
+					reg = CHIP_REV_2_1;
 			} else {
 				rom_version =
 					readl((void __iomem *)ROM_VERSION_A0);
@@ -447,6 +515,53 @@ int arch_cpu_init_dm(void)
 	return 0;
 }
 
+#if defined(CONFIG_IMX_HAB) && defined(CONFIG_IMX8MQ)
+static bool is_hdmi_fused(void) {
+	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
+	struct fuse_bank *bank = &ocotp->bank[1];
+	struct fuse_bank1_regs *fuse =
+		(struct fuse_bank1_regs *)bank->fuse_regs;
+
+	u32 value = readl(&fuse->tester4);
+
+	if (is_imx8mq()) {
+		if (value & 0x02000000)
+			return true;
+	}
+
+	return false;
+}
+
+bool is_uid_matched(u64 uid) {
+	struct tag_serialnr nr;
+	get_board_serial(&nr);
+
+	if (lower_32_bits(uid) == nr.low &&
+		upper_32_bits(uid) == nr.high)
+		return true;
+
+	return false;
+}
+
+static void secure_lockup(void)
+{
+	if (is_imx8mq() && is_soc_rev(CHIP_REV_2_1) &&
+		imx_hab_is_enabled() && !is_hdmi_fused()) {
+#ifdef CONFIG_SECURE_STICKY_BITS_LOCKUP
+		struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
+
+		clock_enable(CCGR_OCOTP, 1);
+		setbits_le32(&ocotp->sw_sticky, 0x6); /* Lock up field return and SRK revoke */
+		writel(0x80000000, &ocotp->scs_set); /* Lock up SCS */
+#else
+		/* Check the Unique ID, if it is matched with UID config, then allow to leave sticky bits unlocked */
+		if (!is_uid_matched(CONFIG_IMX_UNIQUE_ID))
+			hang();
+#endif
+	}
+}
+#endif
+
 int arch_cpu_init(void)
 {
 	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
@@ -466,9 +581,12 @@ int arch_cpu_init(void)
 		clock_init();
 		imx_set_wdog_powerdown(false);
 
+#if defined(CONFIG_IMX_HAB) && defined(CONFIG_IMX8MQ)
+		secure_lockup();
+#endif
 		if (is_imx8md() || is_imx8mmd() || is_imx8mmdl() || is_imx8mms() ||
 		    is_imx8mmsl() || is_imx8mnd() || is_imx8mndl() || is_imx8mns() ||
-		    is_imx8mnsl() || is_imx8mpd()) {
+		    is_imx8mnsl() || is_imx8mpd() || is_imx8mnud() || is_imx8mnus()) {
 			/* Power down cpu core 1, 2 and 3 for iMX8M Dual core or Single core */
 			struct pgc_reg *pgc_core1 = (struct pgc_reg *)(GPC_BASE_ADDR + 0x840);
 			struct pgc_reg *pgc_core2 = (struct pgc_reg *)(GPC_BASE_ADDR + 0x880);
@@ -477,7 +595,7 @@ int arch_cpu_init(void)
 
 			writel(0x1, &pgc_core2->pgcr);
 			writel(0x1, &pgc_core3->pgcr);
-			if (is_imx8mms() || is_imx8mmsl() || is_imx8mns() || is_imx8mnsl()) {
+			if (is_imx8mms() || is_imx8mmsl() || is_imx8mns() || is_imx8mnsl() || is_imx8mnus()) {
 				writel(0x1, &pgc_core1->pgcr);
 				writel(0xE, &gpc->cpu_pgc_dn_trg);
 			} else {
@@ -485,6 +603,11 @@ int arch_cpu_init(void)
 			}
 		}
 	}
+
+#if defined(CONFIG_ANDROID_SUPPORT)
+	/* Enable RTC */
+	writel(0x21, 0x30370038);
+#endif
 
 	if (is_imx8mq()) {
 		clock_enable(CCGR_OCOTP, 1);
@@ -547,6 +670,18 @@ bool is_usb_boot(void)
 {
 	return get_boot_device() == USB_BOOT;
 }
+#ifdef CONFIG_SERIAL_TAG
+void get_board_serial(struct tag_serialnr *serialnr)
+{
+	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
+	struct fuse_bank *bank = &ocotp->bank[0];
+	struct fuse_bank0_regs *fuse =
+		(struct fuse_bank0_regs *)bank->fuse_regs;
+
+	serialnr->low = fuse->uid_low;
+	serialnr->high = fuse->uid_high;
+}
+#endif
 
 #ifdef CONFIG_OF_SYSTEM_SETUP
 bool check_fdt_new_path(void *blob)
@@ -573,7 +708,7 @@ static int disable_fdt_nodes(void *blob, const char *const nodes_path[], int siz
 		if (nodeoff < 0)
 			continue; /* Not found, skip it */
 
-		printf("Found %s node\n", nodes_path[i]);
+		debug("Found %s node\n", nodes_path[i]);
 
 add_status:
 		rc = fdt_setprop(blob, nodeoff, "status", status, strlen(status) + 1);
@@ -616,7 +751,8 @@ static int disable_mipi_dsi_nodes(void *blob)
 		"/mipi_dsi_bridge@30A00000",
 		"/dsi_phy@30A00300",
 		"/soc@0/bus@30800000/mipi_dsi@30a00000",
-		"/soc@0/bus@30800000/dphy@30a00300"
+		"/soc@0/bus@30800000/dphy@30a00300",
+		"/soc@0/bus@30800000/mipi-dsi@30a00000",
 	};
 
 	return disable_fdt_nodes(blob, nodes_path, ARRAY_SIZE(nodes_path));
@@ -644,7 +780,8 @@ static int check_mipi_dsi_nodes(void *blob)
 {
 	static const char * const lcdif_path[] = {
 		"/lcdif@30320000",
-		"/soc@0/bus@30000000/lcdif@30320000"
+		"/soc@0/bus@30000000/lcdif@30320000",
+		"/soc@0/bus@30000000/lcd-controller@30320000"
 	};
 	static const char * const mipi_dsi_path[] = {
 		"/mipi_dsi@30A00000",
@@ -652,11 +789,13 @@ static int check_mipi_dsi_nodes(void *blob)
 	};
 	static const char * const lcdif_ep_path[] = {
 		"/lcdif@30320000/port@0/mipi-dsi-endpoint",
-		"/soc@0/bus@30000000/lcdif@30320000/port@0/endpoint"
+		"/soc@0/bus@30000000/lcdif@30320000/port@0/endpoint",
+		"/soc@0/bus@30000000/lcd-controller@30320000/port@0/endpoint"
 	};
 	static const char * const mipi_dsi_ep_path[] = {
 		"/mipi_dsi@30A00000/port@1/endpoint",
-		"/soc@0/bus@30800000/mipi_dsi@30a00000/ports/port@0/endpoint"
+		"/soc@0/bus@30800000/mipi_dsi@30a00000/ports/port@0/endpoint",
+		"/soc@0/bus@30800000/mipi-dsi@30a00000/ports/port@0/endpoint@0"
 	};
 
 	int lookup_node;
@@ -697,6 +836,14 @@ static int check_mipi_dsi_nodes(void *blob)
 }
 #endif
 
+void board_quiesce_devices(void)
+{
+#ifdef CONFIG_USB_DWC3
+	if (is_usb_boot())
+		disconnect_from_pc();
+#endif
+}
+
 int disable_vpu_nodes(void *blob)
 {
 	static const char * const nodes_path_8mq[] = {
@@ -726,13 +873,146 @@ int disable_vpu_nodes(void *blob)
 		return -EPERM;
 }
 
+#ifdef CONFIG_IMX8MN_LOW_DRIVE_MODE
+static int low_drive_gpu_freq(void *blob)
+{
+	const char *nodes_path_8mn[] = {
+		"/gpu@38000000",
+		"/soc@0/gpu@38000000"
+	};
+
+	int nodeoff, cnt, i, j;
+	u32 assignedclks[7];
+
+	for (i = 0; i < ARRAY_SIZE(nodes_path_8mn); i++) {
+		nodeoff = fdt_path_offset(blob, nodes_path_8mn[i]);
+		if (nodeoff < 0)
+			continue;
+
+		cnt = fdtdec_get_int_array_count(blob, nodeoff, "assigned-clock-rates", assignedclks, 7);
+		if (cnt < 0)
+			return cnt;
+
+		if (cnt != 7)
+			printf("Warning: %s, assigned-clock-rates count %d\n", nodes_path_8mn[i], cnt);
+
+		assignedclks[cnt - 1] = 200000000;
+		assignedclks[cnt - 2] = 200000000;
+
+		for (j = 0; j < cnt; j++) {
+			debug("<%u>, ", assignedclks[j]);
+			assignedclks[j] = cpu_to_fdt32(assignedclks[j]);
+		}
+		debug("\n");
+
+		return fdt_setprop(blob, nodeoff, "assigned-clock-rates", &assignedclks, sizeof(assignedclks));
+	}
+
+	return -ENOENT;
+}
+#endif
+
+static bool check_remote_endpoint(void *blob, const char *ep1, const char *ep2)
+{
+	int lookup_node;
+	int nodeoff;
+
+	nodeoff = fdt_path_offset(blob, ep1);
+	if (nodeoff) {
+		lookup_node = fdtdec_lookup_phandle(blob, nodeoff, "remote-endpoint");
+		nodeoff = fdt_path_offset(blob, ep2);
+
+		if (nodeoff > 0 && nodeoff == lookup_node) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int disable_dsi_lcdif_nodes(void *blob)
+{
+	int ret;
+
+	static const char * const dsi_path_8mp[] = {
+		"/soc@0/bus@32c00000/mipi_dsi@32e60000"
+	};
+
+	static const char * const lcdif_path_8mp[] = {
+		"/soc@0/bus@32c00000/lcd-controller@32e80000"
+	};
+
+	static const char * const lcdif_ep_path_8mp[] = {
+		"/soc@0/bus@32c00000/lcd-controller@32e80000/port@0/endpoint"
+	};
+	static const char * const dsi_ep_path_8mp[] = {
+		"/soc@0/bus@32c00000/mipi_dsi@32e60000/port@0/endpoint"
+	};
+
+	ret = disable_fdt_nodes(blob, dsi_path_8mp, ARRAY_SIZE(dsi_path_8mp));
+	if (ret)
+		return ret;
+
+	if (check_remote_endpoint(blob, dsi_ep_path_8mp[0], lcdif_ep_path_8mp[0])) {
+		/* Disable lcdif node */
+		return disable_fdt_nodes(blob, lcdif_path_8mp, ARRAY_SIZE(lcdif_path_8mp));
+	}
+
+	return 0;
+}
+
+int disable_lvds_lcdif_nodes(void *blob)
+{
+	int ret, i;
+
+	static const char * const ldb_path_8mp[] = {
+		"/soc@0/bus@32c00000/ldb@32ec005c",
+		"/soc@0/bus@32c00000/phy@32ec0128"
+	};
+
+	static const char * const lcdif_path_8mp[] = {
+		"/soc@0/bus@32c00000/lcd-controller@32e90000"
+	};
+
+	static const char * const lcdif_ep_path_8mp[] = {
+		"/soc@0/bus@32c00000/lcd-controller@32e90000/port@0/endpoint@0",
+		"/soc@0/bus@32c00000/lcd-controller@32e90000/port@0/endpoint@1"
+	};
+	static const char * const ldb_ep_path_8mp[] = {
+		"/soc@0/bus@32c00000/ldb@32ec005c/lvds-channel@0/port@0/endpoint",
+		"/soc@0/bus@32c00000/ldb@32ec005c/lvds-channel@1/port@0/endpoint"
+	};
+
+	ret = disable_fdt_nodes(blob, ldb_path_8mp, ARRAY_SIZE(ldb_path_8mp));
+	if (ret)
+		return ret;
+
+	for (i = 0; i < ARRAY_SIZE(ldb_ep_path_8mp); i++) {
+		if (check_remote_endpoint(blob, ldb_ep_path_8mp[i], lcdif_ep_path_8mp[i])) {
+			/* Disable lcdif node */
+			return disable_fdt_nodes(blob, lcdif_path_8mp, ARRAY_SIZE(lcdif_path_8mp));
+		}
+	}
+
+	return 0;
+}
+
 int disable_gpu_nodes(void *blob)
 {
 	static const char * const nodes_path_8mn[] = {
-		"/gpu@38000000"
+		"/gpu@38000000",
+		"/soc@/gpu@38000000"
 	};
 
-	return disable_fdt_nodes(blob, nodes_path_8mn, ARRAY_SIZE(nodes_path_8mn));
+	static const char * const nodes_path_8mp[] = {
+		"/gpu3d@38000000",
+		"/gpu2d@38008000"
+	};
+
+	if (is_imx8mp())
+		return disable_fdt_nodes(blob, nodes_path_8mp, ARRAY_SIZE(nodes_path_8mp));
+	else
+		return disable_fdt_nodes(blob, nodes_path_8mn, ARRAY_SIZE(nodes_path_8mn));
 }
 
 int disable_npu_nodes(void *blob)
@@ -761,6 +1041,76 @@ int disable_dsp_nodes(void *blob)
 	};
 
 	return disable_fdt_nodes(blob, nodes_path_8mp, ARRAY_SIZE(nodes_path_8mp));
+}
+
+static void disable_thermal_cpu_nodes(void *blob, u32 disabled_cores)
+{
+	const char *thermal_path[] = {
+		"/thermal-zones/cpu-thermal/cooling-maps/map0"
+	};
+
+	int nodeoff, cnt, i, ret, j;
+	u32 cooling_dev[12];
+
+	for (i = 0; i < ARRAY_SIZE(thermal_path); i++) {
+		nodeoff = fdt_path_offset(blob, thermal_path[i]);
+		if (nodeoff < 0)
+			continue; /* Not found, skip it */
+
+		cnt = fdtdec_get_int_array_count(blob, nodeoff, "cooling-device", cooling_dev, 12);
+		if (cnt < 0)
+			continue;
+
+		if (cnt != 12)
+			printf("Warning: %s, cooling-device count %d\n", thermal_path[i], cnt);
+
+		for (j = 0; j < cnt; j++) {
+			cooling_dev[j] = cpu_to_fdt32(cooling_dev[j]);
+		}
+
+		ret= fdt_setprop(blob, nodeoff, "cooling-device", &cooling_dev, sizeof(u32) * (12 - disabled_cores * 3));
+		if (ret < 0) {
+			printf("Warning: %s, cooling-device setprop failed %d\n", thermal_path[i], ret);
+			continue;
+		}
+
+		printf("Update node %s, cooling-device prop\n", thermal_path[i]);
+	}
+}
+
+static void disable_pmu_cpu_nodes(void *blob, u32 disabled_cores)
+{
+	const char *pmu_path[] = {
+		"/pmu"
+	};
+
+	int nodeoff, cnt, i, ret, j;
+	u32 irq_affinity[4];
+
+	for (i = 0; i < ARRAY_SIZE(pmu_path); i++) {
+		nodeoff = fdt_path_offset(blob, pmu_path[i]);
+		if (nodeoff < 0)
+			continue; /* Not found, skip it */
+
+		cnt = fdtdec_get_int_array_count(blob, nodeoff, "interrupt-affinity", irq_affinity, 4);
+		if (cnt < 0)
+			continue;
+
+		if (cnt != 4)
+			printf("Warning: %s, interrupt-affinity count %d\n", pmu_path[i], cnt);
+
+		for (j = 0; j < cnt; j++) {
+			irq_affinity[j] = cpu_to_fdt32(irq_affinity[j]);
+		}
+
+		ret= fdt_setprop(blob, nodeoff, "interrupt-affinity", &irq_affinity, sizeof(u32) * (4 - disabled_cores));
+		if (ret < 0) {
+			printf("Warning: %s, interrupt-affinity setprop failed %d\n", pmu_path[i], ret);
+			continue;
+		}
+
+		printf("Update node %s, interrupt-affinity prop\n", pmu_path[i]);
+	}
 }
 
 static int disable_cpu_nodes(void *blob, u32 disabled_cores)
@@ -793,6 +1143,63 @@ static int disable_cpu_nodes(void *blob, u32 disabled_cores)
 		} else {
 			printf("Delete node %s\n", nodes_path[i]);
 		}
+	}
+
+	disable_thermal_cpu_nodes(blob, disabled_cores);
+	disable_pmu_cpu_nodes(blob, disabled_cores);
+
+	return 0;
+}
+
+static int delete_u_boot_nodes(void *blob)
+{
+	static const char * const nodes_path = "/u-boot-node";
+	int nodeoff;
+	int rc;
+
+	nodeoff = fdt_path_offset(blob, nodes_path);
+	if (nodeoff < 0)
+		return 0;
+
+	debug("Found %s node\n", nodes_path);
+
+	rc = fdt_del_node(blob, nodeoff);
+	if (rc < 0) {
+		printf("Unable to delete node %s, err=%s\n",
+		       nodes_path, fdt_strerror(rc));
+	} else {
+		printf("Delete node %s\n", nodes_path);
+	}
+
+	return 0;
+}
+
+static int cleanup_nodes_for_efi(void *blob)
+{
+	static const char * const path[][2] = {
+		{ "/soc@0/bus@32c00000/usb@32e40000", "extcon" },
+		{ "/soc@0/bus@32c00000/usb@32e50000", "extcon" },
+		{ "/soc@0/bus@30800000/ethernet@30be0000", "phy-reset-gpios" },
+		{ "/soc@0/bus@30800000/ethernet@30bf0000", "phy-reset-gpios" }
+	};
+	int nodeoff, i, rc;
+
+	for (i = 0; i < ARRAY_SIZE(path); i++) {
+		nodeoff = fdt_path_offset(blob, path[i][0]);
+		if (nodeoff < 0)
+			continue; /* Not found, skip it */
+		debug("Found %s node\n", path[i][0]);
+
+		rc = fdt_delprop(blob, nodeoff, path[i][1]);
+		if (rc == -FDT_ERR_NOTFOUND)
+			continue;
+		if (rc) {
+			printf("Unable to update property %s:%s, err=%s\n",
+			       path[i][0], path[i][1], fdt_strerror(rc));
+			return rc;
+		}
+
+		printf("Remove %s:%s\n", path[i][0], path[i][1]);
 	}
 
 	return 0;
@@ -895,31 +1302,93 @@ usb_modify_speed:
 #elif defined(CONFIG_IMX8MN)
 	if (is_imx8mnl() || is_imx8mndl() ||  is_imx8mnsl())
 		disable_gpu_nodes(blob);
+#ifdef CONFIG_IMX8MN_LOW_DRIVE_MODE
+	else {
+		int ldm_gpu = low_drive_gpu_freq(blob);
+		if (ldm_gpu < 0)
+			printf("Update GPU node assigned-clock-rates failed\n");
+		else
+			printf("Update GPU node assigned-clock-rates ok\n");
+	}
+#endif
 
-	if (is_imx8mnd() || is_imx8mndl())
+	if (is_imx8mnd() || is_imx8mndl() || is_imx8mnud())
 		disable_cpu_nodes(blob, 2);
-	else if (is_imx8mns() || is_imx8mnsl())
+	else if (is_imx8mns() || is_imx8mnsl() || is_imx8mnus())
 		disable_cpu_nodes(blob, 3);
 
 #elif defined(CONFIG_IMX8MP)
-	if (is_imx8mpl())
+	if (is_imx8mpul()) {
+		/* Disable GPU */
+		disable_gpu_nodes(blob);
+
+		/* Disable DSI */
+		disable_dsi_lcdif_nodes(blob);
+
+		/* Disable LVDS */
+		disable_lvds_lcdif_nodes(blob);
+	}
+
+	if (is_imx8mpul() || is_imx8mpl())
 		disable_vpu_nodes(blob);
 
-	if (is_imx8mpl() || is_imx8mp6())
+	if (is_imx8mpul() || is_imx8mpl() || is_imx8mp6())
 		disable_npu_nodes(blob);
 
-	if (is_imx8mpl())
+	if (is_imx8mpul() || is_imx8mpl())
 		disable_isp_nodes(blob);
 
-	if (is_imx8mpl() || is_imx8mp6())
+	if (is_imx8mpul() || is_imx8mpl() || is_imx8mp6())
 		disable_dsp_nodes(blob);
 
 	if (is_imx8mpd())
 		disable_cpu_nodes(blob, 2);
 #endif
 
+	cleanup_nodes_for_efi(blob);
+
+	delete_u_boot_nodes(blob);
+
+#if defined(CONFIG_ANDROID_SUPPORT) || defined(CONFIG_ANDROID_AUTO_SUPPORT)
+	return 0;
+#else
+	return ft_add_optee_node(blob, bd);
+#endif
+}
+#endif
+
+#ifdef CONFIG_OF_BOARD_FIXUP
+#ifndef CONFIG_SPL_BUILD
+int board_fix_fdt(void *fdt)
+{
+	if (is_imx8mpul()) {
+		int i = 0;
+		int nodeoff, ret;
+		const char *status = "disabled";
+		static const char * dsi_nodes[] = {
+			"/soc@0/bus@32c00000/mipi_dsi@32e60000",
+			"/soc@0/bus@32c00000/lcd-controller@32e80000",
+			"/dsi-host"
+		};
+
+		for (i = 0; i < ARRAY_SIZE(dsi_nodes); i++) {
+			nodeoff = fdt_path_offset(fdt, dsi_nodes[i]);
+			if (nodeoff > 0) {
+set_status:
+				ret = fdt_setprop(fdt, nodeoff, "status", status,
+					strlen(status) + 1);
+				if (ret == -FDT_ERR_NOSPACE) {
+					ret = fdt_increase_size(fdt, 512);
+					if (!ret)
+						goto set_status;
+				}
+			}
+		}
+	}
+
 	return 0;
 }
+#endif
 #endif
 
 #if !CONFIG_IS_ENABLED(SYSRESET)
@@ -958,11 +1427,76 @@ static void acquire_buildinfo(void)
 
 int arch_misc_init(void)
 {
+#ifndef CONFIG_ANDROID_SUPPORT
+	struct udevice *dev;
+
+	uclass_find_first_device(UCLASS_MISC, &dev);
+	for (; dev; uclass_find_next_device(&dev)) {
+		if (device_probe(dev))
+			continue;
+	}
+#endif
 	acquire_buildinfo();
 
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_SPL_BUILD
+static uint32_t gpc_pu_m_core_offset[11] = {
+	0xc00, 0xc40, 0xc80, 0xcc0,
+	0xdc0, 0xe00, 0xe40, 0xe80,
+	0xec0, 0xf00, 0xf40,
+};
+
+#define PGC_PCR				0
+
+void imx_gpc_set_m_core_pgc(unsigned int offset, bool pdn)
+{
+	uint32_t val;
+	uintptr_t reg = GPC_BASE_ADDR + offset;
+
+	val = readl(reg);
+	val &= ~(0x1 << PGC_PCR);
+
+	if(pdn)
+		val |= 0x1 << PGC_PCR;
+	writel(val, reg);
+}
+
+void imx8m_usb_power_domain(uint32_t domain_id, bool on)
+{
+	uint32_t val;
+	uintptr_t reg;
+
+	imx_gpc_set_m_core_pgc(gpc_pu_m_core_offset[domain_id], true);
+
+	reg = GPC_BASE_ADDR + (on ? 0xf8 : 0x104);
+	val = 1 << (domain_id > 3 ? (domain_id + 3) : domain_id);
+	writel(val, reg);
+	while (readl(reg) & val)
+		;
+	imx_gpc_set_m_core_pgc(gpc_pu_m_core_offset[domain_id], false);
+}
+#endif
+
+int imx8m_usb_power(int usb_id, bool on)
+{
+	if (usb_id > 1)
+		return -EINVAL;
+
+#ifdef CONFIG_SPL_BUILD
+	imx8m_usb_power_domain(2 + usb_id, on);
+#else
+	struct arm_smccc_res res;
+	arm_smccc_smc(IMX_SIP_GPC, IMX_SIP_GPC_PM_DOMAIN,
+			2 + usb_id, on, 0, 0, 0, 0, &res);
+	if (res.a0)
+		return -EPERM;
+#endif
+
+	return 0;
+}
 
 void imx_tmu_arch_init(void *reg_base)
 {
@@ -1128,4 +1662,17 @@ long long env_get_offset(long long defautl_offset)
 	return defautl_offset;
 }
 #endif
+#endif
+
+#ifdef CONFIG_IMX8MQ
+int imx8m_dcss_power_init(void)
+{
+	/* Enable the display CCGR before power on */
+	clock_enable(CCGR_DISPLAY, 1);
+
+	writel(0x0000ffff, 0x303A00EC); /*PGC_CPU_MAPPING */
+	setbits_le32(0x303A00F8, 0x1 << 10); /*PU_PGC_SW_PUP_REQ : disp was 10 */
+
+	return 0;
+}
 #endif
