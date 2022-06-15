@@ -880,6 +880,7 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
 	imx8mq-pico-pi.dtb \
 	imx8mm-ddr4-ab2.dtb \
 	imx8mm-ab2.dtb \
+	imx8mm_us04.dtb \
 	imx8mn-ddr4-ab2.dtb \
 	imx8mn-ddr3l-ab2.dtb \
 	imx8mn-ab2.dtb
