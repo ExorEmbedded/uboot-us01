@@ -44,12 +44,14 @@ static iomux_v3_cfg_t const wdog_pads[] = {
 #define US04_DXEN0_GPIO   IMX_GPIO_NR(1, 1)
 #define US04_RXEN0_GPIO   IMX_GPIO_NR(1, 3)
 #define US04_SDCD_GPIO    IMX_GPIO_NR(2, 12)
+#define US04_MA22_RSTNHUB_GPIO    IMX_GPIO_NR(4, 13)
 #define US04_RST_GPIO_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_DSE1)
 
 static iomux_v3_cfg_t const us04_rst_pads[] = {
     IMX8MM_PAD_SAI1_RXD6_GPIO4_IO8 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
     IMX8MM_PAD_GPIO1_IO01_GPIO1_IO1 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
     IMX8MM_PAD_GPIO1_IO03_GPIO1_IO3 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
+    IMX8MM_PAD_SAI1_TXD1_GPIO4_IO13 | MUX_PAD_CTRL(US04_RST_GPIO_PAD_CTRL),
 };
 
 #if 0
@@ -75,6 +77,10 @@ int board_early_init_f(void)
 	imx_iomux_v3_setup_multiple_pads(us04_rst_pads, ARRAY_SIZE(us04_rst_pads));
 	gpio_request(US04_RST_OUT_GPIO, "us04_reset_out");
 	gpio_direction_output(US04_RST_OUT_GPIO, 1);
+	
+	/* For the MA22 target, set RSTHUB gpio to Hi */
+	gpio_request(US04_MA22_RSTNHUB_GPIO, "us04_ma22_rstnhub_out");
+	gpio_direction_output(US04_MA22_RSTNHUB_GPIO, 1);
 
 	return 0;
 }
