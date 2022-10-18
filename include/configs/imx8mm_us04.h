@@ -198,20 +198,14 @@
 	"run mmcboot;" \
 	"fi; " \
 	"if test $skipbsp1 = 0; then " \
-	"echo Try booting Linux from EMMC, main BSP...;" \
+	"echo Try booting Linux from EMMC...;" \
 	"setenv mmcdev 1; " \
-	"setenv bootpart 1:3; " \
-	"setenv mmcroot /dev/mmcblk1p3 ro; " \
+	"setenv bootpart 1:1; " \
+	"setenv mmcroot /dev/mmcblk1p2 ro; " \
 	"run mmcboot;" \
 	"fi; " \
 	"echo Try booting Linux from USB stick...;" \
 	"run usbboot;" \
-	"echo Try booting Linux from EMMC, recovery BSP...;" \
-	"setenv fastboot n; " \
-	"setenv mmcdev 1; " \
-	"setenv bootpart 1:2; " \
-	"setenv mmcroot /dev/mmcblk1p2 ro; " \
-	"run mmcboot;" 
        
 /* Link Definitions */
 #define CONFIG_LOADADDR                0x40480000
