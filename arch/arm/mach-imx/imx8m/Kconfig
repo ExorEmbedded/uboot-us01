@@ -120,7 +120,11 @@ config TARGET_IMX8MM_US04
 	select IMX8MM
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
-	
+	select FSL_CAAM
+	select FSL_BLOB
+	select MISC
+	select SPL_CRYPTO_SUPPORT if SPL
+
 config TARGET_IMX8MM_DDR4_EVK
 	bool "imx8mm DDR4 EVK board"
 	select IMX8MM
