@@ -218,6 +218,7 @@ void board_init_f(ulong dummy)
 	memset((void *)gd, 0, sizeof(gd_t));
 	init_uart_clk(0);
 	arch_cpu_init();
+	init_uart_clk(1);
 
 	board_early_init_f();
 

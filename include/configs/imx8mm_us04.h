@@ -13,11 +13,7 @@
 
 #include "imx_env.h"
 
-#ifdef CONFIG_SECURE_BOOT
-#define CONFIG_CSF_SIZE                0x2000 /* 8K region */
-#endif
-
-#define CONFIG_SPL_MAX_SIZE            (148 * 1024)
+#define CONFIG_SPL_MAX_SIZE		(208 * 1024)
 #define CONFIG_SYS_MONITOR_LEN         (512 * 1024)
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300
@@ -65,10 +61,6 @@
 #define CONFIG_FASTBOOT_USB_DEV 0
 
 #define CONFIG_REMAKE_ELF
-
-#define CONFIG_BOARD_EARLY_INIT_F
-#define CONFIG_BOARD_POSTCLK_INIT
-#define CONFIG_BOARD_LATE_INIT
 
 /* Flat Device Tree Definitions */
 #define CONFIG_OF_BOARD_SETUP
